@@ -32,23 +32,16 @@ public class Server {
     public void onMessage(String message, Session session){
         System.out.println("Message from " + session.getId() + ": " + message);
         try {
-            System.out.println("GOT HERE");
             String[] msgList = message.split("\\|");
-            System.out.println("Message type: " + msgList[0]);
             if(msgList[0].equals("message")) {
-                System.out.println("In Messages");
                 session.getBasicRemote().sendText(message);
             } 
             else if (msgList[0].equals("admin")){
-                System.out.println("in admin");
                 if (msgList.length < 2){
                    return;   
                 }
-                System.out.println("trynna run");
-                System.out.println(msgList[1]);
                 if (msgList[1].equals("start")) {
                    dataFeed  = new DataFeed();
-                   System.out.println("starting");
                    dataFeed.setSession(session);
                    dataFeed.start();
                 } 
