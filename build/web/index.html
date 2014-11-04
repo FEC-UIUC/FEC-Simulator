@@ -37,7 +37,8 @@
 			
 				msg = event.data.split("|");
 				if(msg[0] == 'message'){
-  				   writeResponse(msg[1]);
+                                   m = "<b>" + msg[1] + ":</b> " + msg[2]; 
+  				   writeResponse(m);
 				} else {
   				   var series = stockchart.series[0];
 				   var x = (new Date()).getTime()
@@ -45,6 +46,7 @@
 				   if(y != null){
 				     series.addPoint([x,y], true, true);
 				   }
+                                   $("#price-box").html(y.toString());
 				}
 			};
 
@@ -88,13 +90,17 @@
   <div>
 	<input type="text" id="messageinput"/>
   </div>
-  <div>
+  <div style="float:left;">
 	<button type="button" onclick="openSocket();" >Open</button>
 	<button type="button" onclick="send();" >Send</button>
 	<button type="button" onclick="closeSocket();" >Close</button> <br>
 	<button type="button" onclick="startData();" >Start</button>
 	<button type="button" onclick="stopData();" >Stop</button>
   </div>
+  <div id="price-box" style="float:left;border:1;">
+	
+  </div>
+  <br>
   <!-- Server responses get written here -->
   <div id="messages"></div>
 

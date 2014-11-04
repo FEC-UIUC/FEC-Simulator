@@ -15,7 +15,12 @@ import javax.websocket.Session;
 public class DataFeed extends Thread {
 
     Session session;
+    Server parent;
     boolean stop_flag = false;
+    
+    DataFeed(Server parent_){
+        parent = parent_;
+    }
     
     public void setSession(Session session_){
         session = session_;
@@ -31,13 +36,14 @@ public class DataFeed extends Thread {
 
     public void run() {
         stop_flag = false;
-        System.out.println("MyThread running");
+        double val = 1;
         while (true) {
-            System.out.println("tick");
             long millis = System.currentTimeMillis();
-            String msg = String.valueOf(Math.random());
+            val += 2*Math.random() - 1;
+            String msg = String.valueOf(val);
             try{
                 session.getBasicRemote().sendText("data|" + msg);
+                parent.sendToAll("data|" + msg);
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
