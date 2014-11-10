@@ -26,6 +26,15 @@ public class Server {
             ex.printStackTrace();
         }
     }
+    
+    public void sendToUser(String msg, String userId){
+        Session session = sessions.get(userId);
+        try{
+            session.getBasicRemote().sendText(msg);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
 
     public void sendToAll(String msg) {
         
@@ -60,6 +69,10 @@ public class Server {
             } else if (msgList[1].equals("stop") && dataFeed != null) {
                 dataFeed.end();
             }
+        }
+        else if (msgList[0].equals("order"))
+        {
+            
         }
         
     }
