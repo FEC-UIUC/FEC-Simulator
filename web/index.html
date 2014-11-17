@@ -1,24 +1,25 @@
 <html>
 <head>
-	<title>Financial Engineering Club at Illinois | FEC | Home</title>
-	<link href='http://fonts.googleapis.com/css?family=Roboto+Slab:400,300,700,100' rel='stylesheet' type='text/css'>
-        <link href='http://fec.ec.illinois.edu/main/css/style.css' rel='stylesheet' type='text/css'>
-	<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
-        <script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
-	<script src="http://code.highcharts.com/stock/highstock.js"></script>
-        <script src="http://code.highcharts.com/stock/modules/exporting.js"></script>
-	<script src="http://fec.ec.illinois.edu/simulator/js/chart.js"></script>
-        <script>
-	
-		$(function(){
-			$('#header').load("http://fec.ec.illinois.edu/header.php"); 
-			messages = document.getElementById("messages");
-			makeChart();
-		}); 
-		
-		var webSocket;
+<title>Financial Engineering Club at Illinois | FEC | Home</title>
+<link href='http://fonts.googleapis.com/css?family=Roboto+Slab:400,300,700,100' rel='stylesheet' type='text/css'>
+<link href='http://fec.ec.illinois.edu/main/css/style.css' rel='stylesheet' type='text/css'>
+<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+<script src="http://code.highcharts.com/stock/highstock.js"></script>
+<script src="http://code.highcharts.com/stock/modules/exporting.js"></script>
+<script src="http://fec.ec.illinois.edu/simulator/js/chart.js"></script>
+<script>
+        $(function(){
+            //$('#header').load("http://fec.ec.illinois.edu/header.php");
+            messages = document.getElementById("messages");
+            makeChart();
+        });
+        var webSocket;
 		var messages;
-	  
+                var userID = "rickjames123";
+                var orderID = 1;
+                var orderHistory = {};
+
 		function openSocket(){
 			if(webSocket !== undefined && webSocket.readyState !== WebSocket.CLOSED){
 			   writeResponse("WebSocket is already opened.");
@@ -36,14 +37,20 @@
 			webSocket.onmessage = function(event){
 			
 				msg = event.data.split("|");
-				if(msg[0] == 'message'){
+				if(msg[0] === 'message'){
                                    m = "<b>" + msg[1] + ":</b> " + msg[2]; 
   				   writeResponse(m);
-				} else {
+                                } else if (msg[0] === 'order'){
+                                    handleOrder(msg);
+                                } else if (msg[0] ==='cancel'){
+                                    handleCancel(msg);
+                                } else if (msg[0] ==='snapshot'){
+                                    handleSnapshot(msg);
+				} else if (msg[0] === 'data') {
   				   var series = stockchart.series[0];
 				   var x = (new Date()).getTime()
 				   var y = $.parseJSON(msg[1]);
-				   if(y != null){
+				   if(y !== null){
 				     series.addPoint([x,y], true, true);
 				   }
                                    $("#price-box").html(y.toString());
@@ -63,10 +70,10 @@
 		   webSocket.send("admin|stop");
 		}
 	   
-		function send(){
+		function sendMessage(){
 			var text = document.getElementById("messageinput").value;
 			webSocket.send("message|" + text);
-		}
+                }
 	   
 		function closeSocket(){
 			webSocket.close();
@@ -75,8 +82,91 @@
 		function writeResponse(text){
 			messages.innerHTML += "<br/>" + text;
 		}
+                
+                function clearFeed(){
+                    messages.innerHTML = "<br/>" 
+                }
 		
+                function handleOrder(){
+                    var change = "";
+                    var order = orderHistory[msg[1]].split("|");
+                    if(msg[2] === 0){
+                        writeResponse("Order " + msg[1] + "was filled for " + msg[5]/100);
+                        change = "Filled";
+                    } else if(msg[2] === 1){
+                        writeResponse("Order " + msg[1] + "was partially filled for " + msg[5]/100 + " and has " + msg[4] + " remaining");
+                        change = "Partial Fill";
+                        order[4] = msg[4];
+                    } else if(msg[2] === 2){
+                        writeResponse("Order " + msg[1] + "was successfully placed");
+                        change = "Placed";
+                    } else if(msg[2] === 3){
+                        writeResponse("Order " + msg[1] + "was successfully canceled");
+                        change = "Canceled";
+                    }
+                    order[8] = change;
+                    orderHistory[msg[1]] = (order[0] + "|" + order[1] + "|" + order[2] + "|" + order[3] + "|" + order[4] + "|" + order[5] + "|" + order[6] + "|" + order[7] + "|" + order[8]);
+                }
 		
+                function sendCancel(){
+                    var cancelID = document.getElementByID("cancelOrder").value;
+                    if(cancelID !== ""){
+                        writeResponse("Sending cancel order for " + cancelID);
+                        writeResponse("cancel|" + userID + "|" + cancelID);
+                        //webSocket.send("cancel|" + userID + "|" + cancelID);
+                    }
+                }
+                function handleCancel(){
+                    if(msg[3] == 0){
+                        writeResponse("Cancel Failed on order " + msg[2]);
+                    } else if(msg[3] == 1){
+                        writeResponse("Cancel Success on order " + msg[2]);
+                    }
+                    
+                }
+                
+                function handleSnapshot(){
+                    writeResponse(msg[1] + " Bid: " + msg[2] + "Quantity: " + msg[4] + "Ask: " + msg[3] + "Quantity: " + msg[5]);
+                }
+                
+                function showHistory(){
+                    for(j=1; j<orderID; j++){
+                        var order = orderHistory[j].split("|");
+                        var BuySell;
+                        var Type;
+                        
+                        if(order[5] == 0){
+                            BuySell = "Buy";
+                        } else if(order[5] == 1) {
+                            BuySell = "Sell";
+                        }
+                        if(order[6] == 1){
+                            Type = "Market Order";
+                        } else if(order[6] == 0){
+                            Type = "Limit Order";
+                        }
+                        writeResponse("Order ID: " + order[7] + ", " + BuySell + ", " + Type + ", Stock: " + order[2] + " Price: $" + order[3]/100 + " Quantity: " + order[4] + " Status: " + order[8]);
+                        
+                    }
+                }
+                function sendOrder(){
+                    var stock = document.getElementById("orderstock").value;
+                    var quantity = document.getElementById("ordernumber").value;
+                    var price = document.getElementById("orderprice").value*100;
+                    var a = document.getElementById("BuySell");
+                    var BS = a.options[a.selectedIndex].value;
+                    var b = document.getElementById("OrderType");
+                    var Type = b.options[b.selectedIndex].value;
+                    var order = "order|" + userID + "|" + stock + "|" + price + "|" + quantity + "|" + BS + "|" + Type + "|" + orderID;
+                    if(price >= 1 && quantity % 1 = 0  && stock !== ""){
+                        //webSocket.send(order);
+                        writeResponse(order);
+                        orderHistory[orderID] = order + "|Pending";
+                    } else {
+                        writeResponse("Invalid Parameters for Order");
+                    }
+                    orderID = orderID + 1;
+                }
 	</script>
 </head>
 <body>
@@ -88,22 +178,48 @@
   <div id="chart-area"></div>
   
   <div>
-	<input type="text" id="messageinput"/>
+
+      <label for="messageinput">Message</label>
+      <input type="text" id="messageinput"/>
+  </div>
+  <div>
+      <label for="orderstock">Stock to Order</label>
+      <input type="text" id="orderstock"/>
+      
+      <label for="ordernumber">Number to Order</label>
+      <input type="text" id="ordernumber"/>
+      
+      <label for="orderprice">Price to Pay</label>
+      <input type="text" id="orderprice"/>
+      
+      <select id="BuySell" size="2">
+              <option selected="selected" value="0">Buy</option>
+              <option value="1">Sell</option>
+          </select>
+      <select id="OrderType" size="2">
+              <option selected="selected" value="0">Market Order</option>
+              <option value="1">Limit Order</option>
+          </select>
+      <button type="button" onclick="sendOrder();" >Send Order</button>
+  </div>
+  <div>
+      <label for="cancelOrder"> Cancel Order </label>
+      <input type="text" id="cancelOrder"/>
+      <button type="button" onclick="sendCancel();">Cancel</button>
   </div>
   <div style="float:left;">
 	<button type="button" onclick="openSocket();" >Open</button>
-	<button type="button" onclick="send();" >Send</button>
+	<button type="button" onclick="sendMessage();" >Send Message</button>
 	<button type="button" onclick="closeSocket();" >Close</button> <br>
 	<button type="button" onclick="startData();" >Start</button>
 	<button type="button" onclick="stopData();" >Stop</button>
-  </div>
-  <div id="price-box" style="float:left;border:1;">
-	
-  </div>
-  <br>
-  <!-- Server responses get written here -->
-  <div id="messages"></div>
-
+        <button type="button" onclick="showHistory();" >See Order History</button>
+        <button type="button" onclick="clearFeed();" >Clear Feed</button>
+</div>
+<div id="price-box">
+</div>
+<br>
+<!-- Server responses get written here -->
+<div id="messages"></div>
 </div>
 </body>
-</html>
