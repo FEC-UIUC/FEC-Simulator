@@ -37,6 +37,15 @@ public class Server {
             }
         }
     }
+    
+    public void sendToUser(String msg, String userId){
+        Session session = sessions.get(userId);
+        try{
+            session.getBasicRemote().sendText(msg);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
 
     @OnMessage
     public void onMessage(String message, Session session) {

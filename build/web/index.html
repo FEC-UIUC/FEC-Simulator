@@ -1,20 +1,22 @@
 <html>
 <head>
-<title>Financial Engineering Club at Illinois | FEC | Home</title>
-<link href='http://fonts.googleapis.com/css?family=Roboto+Slab:400,300,700,100' rel='stylesheet' type='text/css'>
-<link href='http://fec.ec.illinois.edu/main/css/style.css' rel='stylesheet' type='text/css'>
-<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
-<script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
-<script src="http://code.highcharts.com/stock/highstock.js"></script>
-<script src="http://code.highcharts.com/stock/modules/exporting.js"></script>
-<script src="js/chart.js"></script>
-<script>
-        $(function(){
-            //$('#header').load("http://fec.ec.illinois.edu/header.php");
-            messages = document.getElementById("messages");
-            makeChart();
-        });
-        var webSocket;
+	<title>Financial Engineering Club at Illinois | FEC | Home</title>
+	<link href='http://fonts.googleapis.com/css?family=Roboto+Slab:400,300,700,100' rel='stylesheet' type='text/css'>
+        <link href='http://fec.ec.illinois.edu/main/css/style.css' rel='stylesheet' type='text/css'>
+	<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+        <script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+	<script src="http://code.highcharts.com/stock/highstock.js"></script>
+        <script src="http://code.highcharts.com/stock/modules/exporting.js"></script>
+	<script src="js/chart.js"></script>
+        <script>
+	
+		$(function(){
+			$('#header').load("http://fec.ec.illinois.edu/header.php"); 
+			messages = document.getElementById("messages");
+			makeChart();
+		}); 
+		
+		var webSocket;
 		var messages;
                 var userID = "rickjames123";
                 var orderID = 1;
@@ -105,10 +107,6 @@
                         change = "Canceled";
                     }
                     order[8] = change;
-                    //orderHistory[msg[1]] = {
-                    //    "symbol" : order[0],
-                    //    "price" : order[1],
-                    //}
                     orderHistory[msg[1]] = (order[0] + "|" + order[1] + "|" + order[2] + "|" + order[3] + "|" + order[4] + "|" + order[5] + "|" + order[6] + "|" + order[7] + "|" + order[8]);
                 }
 		
@@ -162,7 +160,7 @@
                     var b = document.getElementById("OrderType");
                     var Type = b.options[b.selectedIndex].value;
                     var order = "order|" + userID + "|" + stock + "|" + price + "|" + quantity + "|" + BS + "|" + Type + "|" + orderID;
-                    if(price >= 1 && quantity % 1 = 0  && stock !== ""){
+                    if(price >= 1 && quantity % 1 == 0  && stock !== ""){
                         //webSocket.send(order);
                         writeResponse(order);
                         orderHistory[orderID] = order + "|Pending";
@@ -220,10 +218,12 @@
         <button type="button" onclick="showHistory();" >See Order History</button>
         <button type="button" onclick="clearFeed();" >Clear Feed</button>
 </div>
-<div id="price-box" style="float:left;border:1;">
+<div id="price-box">
 </div>
 <br>
 <!-- Server responses get written here -->
 <div id="messages"></div>
+
 </div>
 </body>
+</html>
