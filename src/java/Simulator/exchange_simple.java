@@ -7,38 +7,55 @@ import java.util.Scanner;
 
 public class exchange_simple {
 	
-	static HashMap<String,security> securityMap= new HashMap<String,security>();
-	
-	
-	public static void addSecurity(File marketDataText) throws FileNotFoundException{
-		
-		//String symName;
-		//HashMap<String,security> securityMap= new HashMap<String,security>();
+	HashMap<String,Security> securityMap= new HashMap<String,Security>();
+	HashMap<String,Scanner> dataFeeds = new HashMap<String,Scanner>();
+        
+	public boolean addSecurity(File marketDataText) throws FileNotFoundException, Exception{
 		
 		Scanner marketData= new Scanner(new File("marketData.txt"));
 		
-		while(marketData.hasNext()){
-			String line = marketData.nextLine();
-			String[] line_arr = line.split(";");
-			
-			String sym = line_arr[0];
-			long bid_price = Integer.parseInt(line_arr[1]);
-			long ask_price = Integer.parseInt(line_arr[2]);
-			
-			long bid_quant = Integer.parseInt(line_arr[3]);
-			long ask_quant = Integer.parseInt(line_arr[4]);
-			
-			security temp= new security();
-			temp.sym=sym;
-			temp.bid_price=bid_price;
-			temp.ask_price=ask_price;
-			temp.bid_quant=bid_quant;
-			temp.ask_quant=ask_quant;
-			
-			securityMap.put(sym, temp);
-			//security temp= new security(sym,bid_price,ask_price,bid_quant,ask_quant);
-		}
+		if(marketData.hasNext()){
+                    String line = marketData.nextLine();
+                    String[] line_arr = line.split(";");
+                    Security temp= new Security();
+                    if(line_arr.length != 5){
+                        throw new Exception("Invalid data file");
+                    }
+                    temp.sym = line_arr[0];
+                    temp.bid_price = Integer.parseInt(line_arr[1]);
+                    temp.ask_price = Integer.parseInt(line_arr[2]);
+                    temp.bid_quant = Integer.parseInt(line_arr[3]);
+                    temp.ask_quant = Integer.parseInt(line_arr[4]);
+                    securityMap.put(temp.sym, temp);
+                    dataFeeds.put(temp.sym, marketData);
+                    return true;
+		} else {
+                    return false;
+                }
 	}
+        
+        
+        public void nextTick() throws Exception {
+            for(String sym : dataFeeds.keySet()){
+                Scanner marketData = dataFeeds.get(sym);
+                Security sec = securityMap.get(sym);
+                if(marketData.hasNext()){
+                    String line = marketData.nextLine();
+                    String[] line_arr = line.split(";");
+                    if(line_arr.length != 5){
+                        throw new Exception("Invalid data file");
+                    }
+                    sec.bid_price = Integer.parseInt(line_arr[1]);
+                    sec.ask_price = Integer.parseInt(line_arr[2]);
+                    sec.bid_quant = Integer.parseInt(line_arr[3]);
+                    sec.ask_quant = Integer.parseInt(line_arr[4]);
+                } else {
+                    dataFeeds.remove(sym);
+                    securityMap.remove(sym);
+                }
+            }
+        }
+        
 	
 	//check if security is mapped already
 	public boolean securityExists(String symbol){
@@ -81,19 +98,14 @@ public class exchange_simple {
 		return 0;
 	}
 	
-	public String snapShot(String symbol){
-		
-		if(securityExists(symbol)){
-			String snapShot;
-			snapShot = securityMap.get(symbol).sym + ";" + securityMap.get(symbol).bid_price+ ";" 
-			+ securityMap.get(symbol).ask_price + ";" + securityMap.get(symbol).bid_quant +";"
-			+ securityMap.get(symbol).ask_quant;
-			return snapShot;
-		}
-		else{
-		String tempNo="Security Doesnt Exist";
-		return tempNo;
-		}
+	public String snapShot(String symbol) throws Exception {
+            if(securityExists(symbol)){
+                Security sec = securityMap.get(symbol);
+                return sec.getSnapshotString();
+            }
+            else{
+                throw new Exception(symbol + " does not exist");
+            }
 	}
 	
 	public void updateBidPrice(String symbol, long value){
