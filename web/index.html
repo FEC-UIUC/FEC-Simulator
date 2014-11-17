@@ -7,7 +7,7 @@
 <script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
 <script src="http://code.highcharts.com/stock/highstock.js"></script>
 <script src="http://code.highcharts.com/stock/modules/exporting.js"></script>
-<script src="http://fec.ec.illinois.edu/simulator/js/chart.js"></script>
+<script src="js/chart.js"></script>
 <script>
         $(function(){
             //$('#header').load("http://fec.ec.illinois.edu/header.php");
@@ -105,6 +105,10 @@
                         change = "Canceled";
                     }
                     order[8] = change;
+                    //orderHistory[msg[1]] = {
+                    //    "symbol" : order[0],
+                    //    "price" : order[1],
+                    //}
                     orderHistory[msg[1]] = (order[0] + "|" + order[1] + "|" + order[2] + "|" + order[3] + "|" + order[4] + "|" + order[5] + "|" + order[6] + "|" + order[7] + "|" + order[8]);
                 }
 		
@@ -216,7 +220,7 @@
         <button type="button" onclick="showHistory();" >See Order History</button>
         <button type="button" onclick="clearFeed();" >Clear Feed</button>
 </div>
-<div id="price-box">
+<div id="price-box" style="float:left;border:1;">
 </div>
 <br>
 <!-- Server responses get written here -->
