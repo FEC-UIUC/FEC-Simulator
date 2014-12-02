@@ -7,7 +7,7 @@ import java.util.Scanner;
 
 public class exchange_simple {
 	
-	HashMap<String,Security> securityMap= new HashMap<String,Security>();
+	HashMap<String,security> securityMap= new HashMap<String,security>();
 	HashMap<String,Scanner> dataFeeds = new HashMap<String,Scanner>();
         
 	public boolean addSecurity(File marketDataText) throws FileNotFoundException, Exception{
@@ -17,7 +17,7 @@ public class exchange_simple {
 		if(marketData.hasNext()){
                     String line = marketData.nextLine();
                     String[] line_arr = line.split(";");
-                    Security temp= new Security();
+                    security temp= new security();
                     if(line_arr.length != 5){
                         throw new Exception("Invalid data file");
                     }
@@ -38,7 +38,7 @@ public class exchange_simple {
         public void nextTick() throws Exception {
             for(String sym : dataFeeds.keySet()){
                 Scanner marketData = dataFeeds.get(sym);
-                Security sec = securityMap.get(sym);
+                security sec = securityMap.get(sym);
                 if(marketData.hasNext()){
                     String line = marketData.nextLine();
                     String[] line_arr = line.split(";");
@@ -100,7 +100,7 @@ public class exchange_simple {
 	
 	public String snapShot(String symbol) throws Exception {
             if(securityExists(symbol)){
-                Security sec = securityMap.get(symbol);
+                security sec = securityMap.get(symbol);
                 return sec.getSnapshotString();
             }
             else{
