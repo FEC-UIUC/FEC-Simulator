@@ -1,6 +1,6 @@
 package java.Simulator;
 
-public class security {
+public class Security {
 	String sym;//=symbol;
 	
 	long bid_price;//=bid_price1;
