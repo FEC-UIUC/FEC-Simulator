@@ -7,6 +7,7 @@ package Simulator;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.Set;
 
 /**
  *
@@ -16,11 +17,11 @@ public abstract class Exchange {
     
     public abstract void nextTick() throws Exception;
     
-    public abstract boolean addSecurity(File marketDataText)  throws FileNotFoundException, Exception;
+    public abstract boolean addSecurity(String fname, String symbol)  throws FileNotFoundException, Exception;
     
     public abstract String snapShot(String symbol)  throws Exception;
     
-    public abstract String[] getSymList(); 
+    public abstract Set<String> getSymList(); 
     
     public abstract String placeOrder(String sym, long price, long amount, int side, int type, long orderID);
     

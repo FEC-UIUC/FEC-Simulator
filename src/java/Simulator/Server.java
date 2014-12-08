@@ -3,6 +3,8 @@ package Simulator;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.websocket.OnClose;
 import javax.websocket.OnMessage;
@@ -15,7 +17,7 @@ public class Server {
 
     private static DataFeed dataFeed;
     private static HashMap<String, Session> sessions = new HashMap<String, Session>();
-    private static Exchange exchange;
+    private static Exchange exchange = new exchange_simple();
     
     @OnOpen
     public void onOpen(Session session) {
@@ -91,6 +93,11 @@ public class Server {
             return;
         }
         if (msgList[1].equals("start")) {
+            try {
+                exchange.addSecurity("Simulator\\marketData.txt", "GOOG");
+            } catch (Exception ex) {
+                Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+            }
             dataFeed = new DataFeed(this, exchange);
             dataFeed.start();
         } else if (msgList[1].equals("stop") && dataFeed != null) {
