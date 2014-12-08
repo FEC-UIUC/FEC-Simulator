@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+	<title>Financial Engineering Club at Illinois | FEC | Home</title>
+	<link href='http://fonts.googleapis.com/css?family=Roboto+Slab:400,300,700,100' rel='stylesheet' type='text/css'>
+        <link href='http://fec.ec.illinois.edu/main/css/style.css' rel='stylesheet' type='text/css'>
+	<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+        <script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+	<script src="http://code.highcharts.com/stock/highstock.js"></script>
+        <script src="http://code.highcharts.com/stock/modules/exporting.js"></script>
+	<script src="js/chart.js"></script>
+        <script>
+	
+		$(function(){
+			$('#header').load("http://fec.ec.illinois.edu/header.php"); 
+			messages = document.getElementById("messages");
+			makeChart();
+		}); 
+		
+		var webSocket;
+		var messages;
+                var userID = "rickjames123";
+                var orderID = 1;
+                var orderHistory = {};
+
+		function openSocket(){
+			if(webSocket !== undefined && webSocket.readyState !== WebSocket.CLOSED){
+			   writeResponse("WebSocket is already opened.");
+				return;
+			}
+
+			webSocket = new WebSocket("ws://localhost:8080/Simulator/server");
+			 
+			webSocket.onopen = function(event){
+				if(event.data === undefined)
+					return;
+				writeResponse(event.data);
+			};
+
+			webSocket.onmessage = function(event){
+			
+				msg = event.data.split("|");
+				if(msg[0] === 'message'){
+                                   m = "<b>" + msg[1] + ":</b> " + msg[2]; 
+  				   writeResponse(m);
+                                } else if (msg[0] === 'order'){
+                                    handleOrder(msg);
+                                } else if (msg[0] ==='cancel'){
+                                    handleCancel(msg);
+                                } else if (msg[0] ==='snapshot'){
+                                    handleSnapshot(msg);
+				} else if (msg[0] === 'data') {
+  				   var series = stockchart.series[0];
+				   var x = (new Date()).getTime()
+				   var y = $.parseJSON(msg[1]);
+				   if(y !== null){
+				     series.addPoint([x,y], true, true);
+				   }
+                                   $("#price-box").html(y.toString());
+				}
+			};
+
+			webSocket.onclose = function(event){
+				writeResponse("Connection closed");
+			};
+		}
+		
+		function startData(){
+		   webSocket.send("admin|start");
+		}
+		
+		function stopData(){
+		   webSocket.send("admin|stop");
+		}
+	   
+		function sendMessage(){
+			var text = document.getElementById("messageinput").value;
+			webSocket.send("message|" + text);
+                }
+	   
+		function closeSocket(){
+			webSocket.close();
+		}
+
+		function writeResponse(text){
+			messages.innerHTML += "<br/>" + text;
+		}
+                
+                function clearFeed(){
+                    messages.innerHTML = "<br/>" 
+                }
+            
+            </script>
+		
+    </head>
+    <body>
+        <br>
+<!-- Server responses get written here -->
+<div id="messages"></div>
+    </body>
+</html>
