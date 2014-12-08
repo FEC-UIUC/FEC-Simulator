@@ -10,12 +10,12 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
-
 @ServerEndpoint("/server")
 public class Server {
 
     private static DataFeed dataFeed;
     private static HashMap<String, Session> sessions = new HashMap<String, Session>();
+    private static Exchange exchange;
     
     @OnOpen
     public void onOpen(Session session) {
@@ -49,6 +49,14 @@ public class Server {
             ex.printStackTrace();
         }
     }
+    
+    public void sendToUser(String msg, Session session){
+        try{
+            session.getBasicRemote().sendText(msg);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
 
     @OnMessage
     public void onMessage(String message, Session session) {
@@ -61,16 +69,12 @@ public class Server {
         } 
         else if (msgList[0].equals("admin")) 
         {
-            if (msgList.length < 2) {
-                return;
-            }
-            if (msgList[1].equals("start")) {
-                dataFeed = new DataFeed(this);
-                dataFeed.setSession(session);
-                dataFeed.start();
-            } else if (msgList[1].equals("stop") && dataFeed != null) {
-                dataFeed.end();
-            }
+            handleAdmin(msgList);
+        }
+        else if (msgList[0].equals("order"))
+        {
+            String resp = handleOrder(msgList);
+            sendToUser(resp, session);
         }
         
     }
@@ -80,4 +84,29 @@ public class Server {
         System.out.println("Session " + session.getId() + " has ended");
         sessions.remove(session.getId());
     }
+    
+    
+    private void handleAdmin(String[] msgList){
+        if (msgList.length < 2) {
+            return;
+        }
+        if (msgList[1].equals("start")) {
+            dataFeed = new DataFeed(this, exchange);
+            dataFeed.start();
+        } else if (msgList[1].equals("stop") && dataFeed != null) {
+            dataFeed.end();
+        }
+    }
+    
+    
+    private String handleOrder(String[] msgList) {
+        long price = Long.parseLong(msgList[2]);
+        long amount = Long.parseLong(msgList[3]);
+        int side = Integer.parseInt(msgList[4]);
+        int type = Integer.parseInt(msgList[5]);
+        long orderID = Long.parseLong(msgList[6]);
+        String resp = exchange.placeOrder(msgList[1], price, amount, side, type, orderID);
+        return resp;
+    }
+    
 }

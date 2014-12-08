@@ -1,13 +1,14 @@
-package java.Simulator;
+package Simulator;
 
+import Simulator.Security;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Scanner;
 
-public class exchange_simple {
+public class exchange_simple extends Exchange {
 	
-	HashMap<String,Security> securityMap= new HashMap<String,Security>();
+	HashMap<String,Security> securityMap = new HashMap<String,Security>();
 	HashMap<String,Scanner> dataFeeds = new HashMap<String,Scanner>();
         
 	public boolean addSecurity(File marketDataText) throws FileNotFoundException, Exception{
@@ -33,6 +34,11 @@ public class exchange_simple {
                     return false;
                 }
 	}
+        
+        
+        public String[] getSymList() {
+            return (String [])securityMap.keySet().toArray();
+        }
         
         
         public void nextTick() throws Exception {
@@ -66,7 +72,7 @@ public class exchange_simple {
 		return false;
 	}
 	
-	public long getAskQuant(String symbol){
+	public long getAskQuantity(String symbol){
 		
 		if(securityExists(symbol)){
 			return securityMap.get(symbol).ask_quant;
@@ -74,7 +80,7 @@ public class exchange_simple {
 		return 0;
 	}
 	
-	public long getBidQuant(String symbol){
+	public long getBidQuantity(String symbol){
 		
 		if(securityExists(symbol)){
 			return securityMap.get(symbol).bid_quant;
@@ -132,6 +138,39 @@ public class exchange_simple {
 		long value=securityMap.get(symbol).ask_quant;
 		securityMap.get(symbol).ask_quant= value + valueAdd;
 	}
+
+        public String placeOrder(String sym, long price, long amount, int side, int type, long orderID)
+        {
+            long fill_qty = 0;
+            long fill_price = 0;
+            if(!securityExists(sym)){
+                return "order|" + Long.toString(orderID) + "|3|0|0|0";
+            }
+            if(side == 1 && price >= getBidPrice(sym))
+            {
+                fill_qty = -1*Math.min(amount, getBidQuantity(sym));
+                fill_price = getBidPrice(sym);
+            }
+            else if (side == 0 && price <= getAskPrice(sym))
+            {
+                fill_qty = Math.min(amount, getAskQuantity(sym));
+                fill_price = getAskPrice(sym);
+            }
+            
+            String action;
+            if(fill_qty == amount){
+                action = "0";
+            } else if (Math.abs(fill_qty) > 0){
+                action = "1";
+            } else {
+                action = "3";
+            }
+            
+            String money = Long.toString(-1*fill_qty*fill_price);
+            
+            return "order|" + Long.toString(orderID) + "|" + action + "|" + Long.toString(fill_qty) + "|0|" + money;
+                    
+        }
 	
 	public static void main(String[] args) throws FileNotFoundException {
 		// TODO Auto-generated method stub
