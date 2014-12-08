@@ -94,7 +94,7 @@ public class Server {
         }
         if (msgList[1].equals("start")) {
             try {
-                exchange.addSecurity("Simulator\\marketData.txt", "GOOG");
+                exchange.addSecurity("C:\\Users\\Greg Pastorek\\Documents\\NetBeansProjects\\Simulator\\src\\java\\Simulator\\marketData.txt", "GOOG");
             } catch (Exception ex) {
                 Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
             }
