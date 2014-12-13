@@ -19,6 +19,7 @@ public class Server {
     private static HashMap<String, Session> sessions = new HashMap<String, Session>();
     private static Exchange exchange = new exchange_simple();
     
+    
     @OnOpen
     public void onOpen(Session session) {
         try {
@@ -102,6 +103,17 @@ public class Server {
             dataFeed.start();
         } else if (msgList[1].equals("stop") && dataFeed != null) {
             dataFeed.end();
+        } else if (msgList[1].equals("boot")){
+            String userID = msgList[2];
+            Session session_to_boot = sessions.get(userID);
+            if(session_to_boot != null){
+                try {
+                    session_to_boot.close();
+                } catch (IOException ex) {
+                    Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            
         }
     }
     

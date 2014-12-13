@@ -174,7 +174,7 @@ public class exchange_simple extends Exchange {
         }
         
         public String cancelOrder(long userID, long orderID){
-            return "";
+            return "cancel|" + Long.toString(orderID) + "|0";
         }
 	
 	public static void main(String[] args) throws FileNotFoundException {

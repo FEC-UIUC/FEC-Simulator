@@ -42,7 +42,7 @@ public class DataFeed extends Thread {
         stop_flag = false;
         double val = 1;
         while (true) {
-            long millis = System.currentTimeMillis();
+            long t0 = System.currentTimeMillis();
             try {
                 exchange.nextTick();
             } catch (Exception ex) {
@@ -57,8 +57,11 @@ public class DataFeed extends Thread {
                 }
                 parent.sendToAll(snapshot);
             }
+            long t1 = System.currentTimeMillis();
             try{
-                Thread.sleep(1000 - millis % 1000);
+                if(t1-t0 < 1000){
+                    Thread.sleep(1000 - (t1 - t0) % 1000);
+                }
             } catch (InterruptedException ex) {
                 ex.printStackTrace();
             }
