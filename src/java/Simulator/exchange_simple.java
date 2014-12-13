@@ -5,7 +5,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 
@@ -176,6 +178,23 @@ public class exchange_simple extends Exchange {
         public String cancelOrder(long userID, long orderID){
             return "cancel|" + Long.toString(orderID) + "|0";
         }
+        
+        public long getUserMoney(long userID){
+            return 0;
+        }
+        
+        public boolean addUser(long userID, String username){
+            return true;
+        }
+        
+        public boolean removeUser(long userID){
+            return true;
+        }
+        
+        public List<String> getUserOrders(long userID) {
+            return new ArrayList<String>();
+        }
+        
 	
 	public static void main(String[] args) throws FileNotFoundException {
 		// TODO Auto-generated method stub
