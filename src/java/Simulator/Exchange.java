@@ -23,6 +23,8 @@ public abstract class Exchange {
     
     public abstract Set<String> getSymList(); 
     
-    public abstract String placeOrder(String sym, long price, long amount, int side, int type, long orderID);
+    public abstract String placeOrder(long userID, String sym, long price, long amount, int side, int type, long orderID);
+    
+    public abstract String cancelOrder(long userID, long orderID);
     
 }

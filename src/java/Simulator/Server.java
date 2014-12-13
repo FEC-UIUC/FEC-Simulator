@@ -107,12 +107,14 @@ public class Server {
     
     
     private String handleOrder(String[] msgList) {
+        long userID = Long.parseLong(msgList[0]);
+        String symbol = msgList[1];
         long price = Long.parseLong(msgList[2]);
         long amount = Long.parseLong(msgList[3]);
         int side = Integer.parseInt(msgList[4]);
         int type = Integer.parseInt(msgList[5]);
         long orderID = Long.parseLong(msgList[6]);
-        String resp = exchange.placeOrder(msgList[1], price, amount, side, type, orderID);
+        String resp = exchange.placeOrder(userID, symbol, price, amount, side, type, orderID);
         return resp;
     }
     

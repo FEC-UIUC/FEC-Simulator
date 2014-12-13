@@ -140,7 +140,7 @@ public class exchange_simple extends Exchange {
 		securityMap.get(symbol).ask_quant= value + valueAdd;
 	}
 
-        public String placeOrder(String sym, long price, long amount, int side, int type, long orderID)
+        public String placeOrder(long userID, String sym, long price, long amount, int side, int type, long orderID)
         {
             long fill_qty = 0;
             long fill_price = 0;
@@ -171,6 +171,10 @@ public class exchange_simple extends Exchange {
             
             return "order|" + Long.toString(orderID) + "|" + action + "|" + Long.toString(fill_qty) + "|0|" + money;
                     
+        }
+        
+        public String cancelOrder(long userID, long orderID){
+            return "";
         }
 	
 	public static void main(String[] args) throws FileNotFoundException {
