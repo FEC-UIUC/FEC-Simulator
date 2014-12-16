@@ -6,6 +6,8 @@
 package Simulator;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.websocket.Session;
 
 /**
@@ -16,10 +18,12 @@ public class DataFeed extends Thread {
 
     Session session;
     Server parent;
+    Exchange exchange;
     boolean stop_flag = false;
     
-    DataFeed(Server parent_){
+    DataFeed(Server parent_, Exchange exchange_){
         parent = parent_;
+        exchange = exchange_;
     }
     
     public void setSession(Session session_){
@@ -38,17 +42,26 @@ public class DataFeed extends Thread {
         stop_flag = false;
         double val = 1;
         while (true) {
-            long millis = System.currentTimeMillis();
-            val += 2*Math.random() - 1;
-            String msg = String.valueOf(val);
-            try{
-                session.getBasicRemote().sendText("data|" + msg);
-                parent.sendToAll("data|" + msg);
-            } catch (IOException ex) {
-                ex.printStackTrace();
+            long t0 = System.currentTimeMillis();
+            try {
+                exchange.nextTick();
+            } catch (Exception ex) {
+                Logger.getLogger(DataFeed.class.getName()).log(Level.SEVERE, null, ex);
             }
+            for(String sym : exchange.getSymList()){
+                String snapshot = "";
+                try {
+                    snapshot = exchange.snapShot(sym);
+                } catch (Exception ex) {
+                    Logger.getLogger(DataFeed.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                parent.sendToAll(snapshot);
+            }
+            long t1 = System.currentTimeMillis();
             try{
-                Thread.sleep(1000 - millis % 1000);
+                if(t1-t0 < 1000){
+                    Thread.sleep(1000 - (t1 - t0) % 1000);
+                }
             } catch (InterruptedException ex) {
                 ex.printStackTrace();
             }

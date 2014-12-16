@@ -1,54 +1,65 @@
-package java.Simulator;
+package Simulator;
 
+import Simulator.Security;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 
-public class exchange_simple {
+public class exchange_simple extends Exchange {
 	
-	HashMap<String,Security> securityMap= new HashMap<String,Security>();
-	HashMap<String,Scanner> dataFeeds = new HashMap<String,Scanner>();
+	HashMap<String,Security> securityMap = new HashMap<String,Security>();
+	HashMap<String,BufferedReader> dataFeeds = new HashMap<String,BufferedReader>();
         
-	public boolean addSecurity(File marketDataText) throws FileNotFoundException, Exception{
+	public boolean addSecurity(String fname, String symbol) throws FileNotFoundException, Exception{
 		
-		Scanner marketData= new Scanner(new File("marketData.txt"));
-		
-		if(marketData.hasNext()){
-                    String line = marketData.nextLine();
-                    String[] line_arr = line.split(";");
-                    Security temp= new Security();
-                    if(line_arr.length != 5){
-                        throw new Exception("Invalid data file");
-                    }
-                    temp.sym = line_arr[0];
-                    temp.bid_price = Integer.parseInt(line_arr[1]);
-                    temp.ask_price = Integer.parseInt(line_arr[2]);
-                    temp.bid_quant = Integer.parseInt(line_arr[3]);
-                    temp.ask_quant = Integer.parseInt(line_arr[4]);
-                    securityMap.put(temp.sym, temp);
-                    dataFeeds.put(temp.sym, marketData);
-                    return true;
-		} else {
+                System.out.println(fname);
+		BufferedReader marketData= new BufferedReader(new FileReader(fname));
+                
+                String line = marketData.readLine();
+                if(line == null){
                     return false;
                 }
+                String[] line_arr = line.split(";");
+                Security temp = new Security();
+                if(line_arr.length != 4){
+                    throw new Exception("Invalid data file");
+                }
+                temp.sym = symbol;
+                temp.bid_price = Integer.parseInt(line_arr[0]);
+                temp.ask_price = Integer.parseInt(line_arr[1]);
+                temp.bid_quant = Integer.parseInt(line_arr[2]);
+                temp.ask_quant = Integer.parseInt(line_arr[3]);
+                securityMap.put(temp.sym, temp);
+                dataFeeds.put(temp.sym, marketData);
+                return true;
 	}
+        
+        
+        public Set<String> getSymList() {
+            return securityMap.keySet();
+        }
         
         
         public void nextTick() throws Exception {
             for(String sym : dataFeeds.keySet()){
-                Scanner marketData = dataFeeds.get(sym);
+                BufferedReader marketData = dataFeeds.get(sym);
                 Security sec = securityMap.get(sym);
-                if(marketData.hasNext()){
-                    String line = marketData.nextLine();
+                String line = marketData.readLine();
+                if (line != null){
                     String[] line_arr = line.split(";");
-                    if(line_arr.length != 5){
-                        throw new Exception("Invalid data file");
+                    if(line_arr.length != 4){
+                        throw new Exception("Invalid data file, length is " + Integer.toString(line_arr.length));
                     }
-                    sec.bid_price = Integer.parseInt(line_arr[1]);
-                    sec.ask_price = Integer.parseInt(line_arr[2]);
-                    sec.bid_quant = Integer.parseInt(line_arr[3]);
-                    sec.ask_quant = Integer.parseInt(line_arr[4]);
+                    sec.bid_price = Integer.parseInt(line_arr[0]);
+                    sec.ask_price = Integer.parseInt(line_arr[1]);
+                    sec.bid_quant = Integer.parseInt(line_arr[2]);
+                    sec.ask_quant = Integer.parseInt(line_arr[3]);
                 } else {
                     dataFeeds.remove(sym);
                     securityMap.remove(sym);
@@ -58,32 +69,28 @@ public class exchange_simple {
         
 	
 	//check if security is mapped already
-	public boolean securityExists(String symbol){
-		
+	public boolean securityExists(String symbol){		
 		if(securityMap.containsKey(symbol)){
 			return true;
 		}
 		return false;
 	}
 	
-	public long getAskQuant(String symbol){
-		
+	public long getAskQuantity(String symbol){
 		if(securityExists(symbol)){
 			return securityMap.get(symbol).ask_quant;
 		}
 		return 0;
 	}
 	
-	public long getBidQuant(String symbol){
-		
+	public long getBidQuantity(String symbol){	
 		if(securityExists(symbol)){
 			return securityMap.get(symbol).bid_quant;
 		}
 		return 0;
 	}
 	
-	public long getBidPrice(String symbol){
-		
+	public long getBidPrice(String symbol){	
 		if(securityExists(symbol)){
 			return securityMap.get(symbol).bid_price;
 		}
@@ -119,11 +126,13 @@ public class exchange_simple {
 		if(!securityExists(symbol))
 			return;
 	}
+        
 	public void updateBidQuant(String symbol, long value){
 		
 		if(!securityExists(symbol))
 			return;
 	}
+        
 	public void updateAskQuant(String symbol, long valueAdd){
 		
 		if(!securityExists(symbol))
@@ -132,6 +141,60 @@ public class exchange_simple {
 		long value=securityMap.get(symbol).ask_quant;
 		securityMap.get(symbol).ask_quant= value + valueAdd;
 	}
+
+        public String placeOrder(long userID, String sym, long price, long amount, int side, int type, long orderID)
+        {
+            long fill_qty = 0;
+            long fill_price = 0;
+            if(!securityExists(sym)){
+                return "order|" + Long.toString(orderID) + "|3|0|0|0";
+            }
+            if(side == 1 && price >= getBidPrice(sym))
+            {
+                fill_qty = -1*Math.min(amount, getBidQuantity(sym));
+                fill_price = getBidPrice(sym);
+            }
+            else if (side == 0 && price <= getAskPrice(sym))
+            {
+                fill_qty = Math.min(amount, getAskQuantity(sym));
+                fill_price = getAskPrice(sym);
+            }
+            
+            String action;
+            if(fill_qty == amount){
+                action = "0";
+            } else if (Math.abs(fill_qty) > 0){
+                action = "1";
+            } else {
+                action = "3";
+            }
+            
+            String money = Long.toString(-1*fill_qty*fill_price);
+            
+            return "order|" + Long.toString(orderID) + "|" + action + "|" + Long.toString(fill_qty) + "|0|" + money;
+                    
+        }
+        
+        public String cancelOrder(long userID, long orderID){
+            return "cancel|" + Long.toString(orderID) + "|0";
+        }
+        
+        public long getUserMoney(long userID){
+            return 0;
+        }
+        
+        public boolean addUser(long userID, String username){
+            return true;
+        }
+        
+        public boolean removeUser(long userID){
+            return true;
+        }
+        
+        public List<String> getUserOrders(long userID) {
+            return new ArrayList<String>();
+        }
+        
 	
 	public static void main(String[] args) throws FileNotFoundException {
 		// TODO Auto-generated method stub
