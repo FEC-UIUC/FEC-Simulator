@@ -19,13 +19,13 @@ type (0 - market order, 1 - limit order)|
 public class Order(){
 	
 	public Order(String userID, String sym, long price, long qty, int side, int type){
-		messagetype = 'order';
-		userID = userID;
-		sym = sym;
-		price = price;
-		qty = qty;
-		side = side;
-		type = type;
+		private messagetype = 'order';
+		private userID = userID;
+		private sym = sym;
+		private price = price;
+		private qty = qty;
+		private side = side;
+		private type = type;
 	}
 
 	public void sendOrder(Sender sender){
@@ -43,7 +43,7 @@ public class Order(){
 
 	}
 
-	public void setuserID(String userID){
+	public void setUserID(String userID){
 		this.userID = userID;
 	}
 
@@ -55,7 +55,7 @@ public class Order(){
 		this.price = price;
 	}
 
-	public void setqty(Long qty){
+	public void setQty(Long qty){
 		this.qty = qty;
 	}
 
@@ -65,6 +65,30 @@ public class Order(){
 
 	public void setType(int type){
 		this.type = type;
+	}
+
+	public String getUserID(){
+		return this.userID;
+	}
+
+	public String getSym(){
+		return this.sym;
+	}
+
+	public Long getPrice(){
+		return this.price;
+	}
+
+	public Long getQty(){
+		return this.qty;
+	}
+
+	public int getSide(){
+		return this.side;
+	}
+
+	public int getType(){
+		return this.type;
 	}
 
 }
