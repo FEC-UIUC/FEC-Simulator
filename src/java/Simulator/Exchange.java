@@ -25,17 +25,17 @@ public abstract class Exchange {
     
     public abstract Set<String> getSymList(); 
     
-    public abstract HashMap<String, String> placeOrder(long userID, String sym, long price, long amount, int side, int type, long orderID);
+    public abstract HashMap<String, String> placeOrder(String userID, String sym, long price, long amount, int side, int type, long orderID);
     
-    public abstract HashMap<String, String> cancelOrder(long userID, long orderID);
+    public abstract HashMap<String, String> cancelOrder(String userID, long orderID);
     
-    public abstract long getUserMoney(long userID);
+    public abstract long getUserMoney(String userID);
     
-    public abstract List<String> getUserOrders(long userID); 
+    public abstract List<String> getUserOrders(String userID); 
     
-    public abstract boolean addUser(long userID, String username);
+    public abstract HashMap<String, String> addUser(String username, String userID);
         
-    public abstract boolean removeUser(long userID);
+    public abstract boolean removeUser(String userID);
     
     
     

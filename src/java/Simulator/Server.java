@@ -84,6 +84,11 @@ public class Server {
             String resp = handleCancel(msgList);
             sendToUser(resp, session);
         }
+        else if (msgList[0].equals("new_user"))
+        {
+            String resp = handleNewUser(msgList, session.getId());
+            sendToUser(resp, session);
+        }
         
     }
 
@@ -109,23 +114,28 @@ public class Server {
         } else if (msgList[1].equals("stop") && dataFeed != null) {
             dataFeed.end();
         } else if (msgList[1].equals("boot")){
-            String userID = msgList[2];
-            Session session_to_boot = sessions.get(userID);
-            sendToUser("type=message|message=You have been booted.", session_to_boot);
-            if(session_to_boot != null){
-                try {
-                    session_to_boot.close();
-                } catch (IOException ex) {
-                    Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
-                }
+            if(msgList.length >= 3){
+                bootUser(msgList[2]);                
             }
-            
+        }
+    }
+    
+    private void bootUser(String userID){
+        Session session_to_boot = sessions.get(userID);
+        exchange.removeUser(userID);
+        if(session_to_boot != null){
+            try {
+                sendToUser("type=message|message=You have been booted.", session_to_boot);
+                session_to_boot.close();
+            } catch (IOException ex) {
+                Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }
     
     
     private String handleOrder(String[] msgList) {
-        long userID = Long.parseLong(msgList[1]);
+        String userID = msgList[1];
         String symbol = msgList[2];
         long price = Long.parseLong(msgList[3]);
         long amount = Long.parseLong(msgList[4]);
@@ -137,9 +147,15 @@ public class Server {
     }
     
     private String handleCancel(String[] msgList){
-        long userID = Long.parseLong(msgList[1]);
+        String userID = msgList[1];
         long orderID = Long.parseLong(msgList[2]);
         HashMap<String, String> resp = exchange.cancelOrder(userID, orderID);
+        return MessageFormatter.format(resp);
+    }
+    
+    private String handleNewUser(String[] msgList, String userID) {
+        String username = msgList[1];
+        HashMap<String, String> resp = exchange.addUser(userID, username);  /*TODO - add user, return new user message if new*/
         return MessageFormatter.format(resp);
     }
     

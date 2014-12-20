@@ -142,7 +142,7 @@ public class exchange_simple extends Exchange {
 		securityMap.get(symbol).ask_quant= value + valueAdd;
 	}
 
-        public HashMap<String, String> placeOrder(long userID, String sym, long price, long amount, int side, int type, long orderID)
+        public HashMap<String, String> placeOrder(String userID, String sym, long price, long amount, int side, int type, long orderID)
         {
             HashMap<String, String> result = new HashMap<String, String>();
             if(!securityExists(sym)){
@@ -185,7 +185,7 @@ public class exchange_simple extends Exchange {
                     
         }
         
-        public HashMap<String, String> cancelOrder(long userID, long orderID){
+        public HashMap<String, String> cancelOrder(String userID, long orderID){
             HashMap<String, String> result = new HashMap<String, String>();
             result.put("type", "cancel");
             result.put("orderID", Long.toString(orderID));
@@ -193,39 +193,35 @@ public class exchange_simple extends Exchange {
             return result;
         }
         
-        public long getUserMoney(long userID){
+        public long getUserMoney(String userID){
             return 0;
         }
         
-        public boolean addUser(long userID, String username){
+        public HashMap<String, String> addUser(String username, String userID){
+            /* TODO:
+                check if user already exists
+                if already exists:
+                    -send series of messages of all active orders
+                    -return new_user message with appropriate userID and money
+                if new user:
+                    -add user to list of active users, make structure
+                    -return new_user message with appropriate userID and money
+            */
+            HashMap<String, String> resp = new HashMap<String, String>();
+            resp.put("type", "new_user");
+            resp.put("userID", userID);
+            resp.put("money", "0");
+            return resp;
+        }
+        
+        public boolean removeUser(String userID){
             return true;
         }
         
-        public boolean removeUser(long userID){
-            return true;
-        }
-        
-        public List<String> getUserOrders(long userID) {
+        public List<String> getUserOrders(String userID) {
             return new ArrayList<String>();
         }
         
-	
-	public static void main(String[] args) throws FileNotFoundException {
-		// TODO Auto-generated method stub
-		//Scanner marketData= new Scanner(new File("marketData.txt"));
-		
-		//mapSecurity(marketData);
-		
-		/*while(marketData.hasNext()){
-			String line = marketData.nextLine();
-			String[] line_arr = line.split(";");
-			String sym = line_arr[0];
-			long price = Integer.parseInt(line_arr[1]);
-			long quantity = Integer.parseInt(line_arr[2]);
-			
-		}*/
-		
-	}
         
         private String getActionString(long fill_qty, long amount){
             if(fill_qty == amount){
