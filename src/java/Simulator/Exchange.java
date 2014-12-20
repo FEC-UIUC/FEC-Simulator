@@ -7,6 +7,7 @@ package Simulator;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -24,9 +25,9 @@ public abstract class Exchange {
     
     public abstract Set<String> getSymList(); 
     
-    public abstract String placeOrder(long userID, String sym, long price, long amount, int side, int type, long orderID);
+    public abstract HashMap<String, String> placeOrder(long userID, String sym, long price, long amount, int side, int type, long orderID);
     
-    public abstract String cancelOrder(long userID, long orderID);
+    public abstract HashMap<String, String> cancelOrder(long userID, long orderID);
     
     public abstract long getUserMoney(long userID);
     

@@ -23,7 +23,7 @@ public class Server {
     @OnOpen
     public void onOpen(Session session) {
         try {
-            session.getBasicRemote().sendText("message|Connection Established");
+            session.getBasicRemote().sendText("type=message|message=Connection Established");
             sessions.put(session.getId(), session);
             System.out.println(session.getId() + " has opened a connection");
         } catch (IOException ex) {
@@ -67,7 +67,7 @@ public class Server {
         String[] msgList = message.split("\\|");
         if (msgList[0].equals("message")) 
         {
-            String tosend = "message|" + session.getId() + "|" + msgList[1];
+            String tosend = "type=message|message=" + session.getId() + "|" + msgList[1];
             sendToAll(tosend);
         } 
         else if (msgList[0].equals("admin")) 
@@ -77,6 +77,11 @@ public class Server {
         else if (msgList[0].equals("order"))
         {
             String resp = handleOrder(msgList);
+            sendToUser(resp, session);
+        }
+        else if (msgList[0].equals("cancel"))
+        {
+            String resp = handleCancel(msgList);
             sendToUser(resp, session);
         }
         
@@ -106,6 +111,7 @@ public class Server {
         } else if (msgList[1].equals("boot")){
             String userID = msgList[2];
             Session session_to_boot = sessions.get(userID);
+            sendToUser("type=message|message=You have been booted.", session_to_boot);
             if(session_to_boot != null){
                 try {
                     session_to_boot.close();
@@ -119,15 +125,22 @@ public class Server {
     
     
     private String handleOrder(String[] msgList) {
-        long userID = Long.parseLong(msgList[0]);
-        String symbol = msgList[1];
-        long price = Long.parseLong(msgList[2]);
-        long amount = Long.parseLong(msgList[3]);
-        int side = Integer.parseInt(msgList[4]);
-        int type = Integer.parseInt(msgList[5]);
-        long orderID = Long.parseLong(msgList[6]);
-        String resp = exchange.placeOrder(userID, symbol, price, amount, side, type, orderID);
-        return resp;
+        long userID = Long.parseLong(msgList[1]);
+        String symbol = msgList[2];
+        long price = Long.parseLong(msgList[3]);
+        long amount = Long.parseLong(msgList[4]);
+        int side = Integer.parseInt(msgList[5]);
+        int type = Integer.parseInt(msgList[6]);
+        long orderID = Long.parseLong(msgList[7]);
+        HashMap<String, String> resp = exchange.placeOrder(userID, symbol, price, amount, side, type, orderID);
+        return MessageFormatter.format(resp);
+    }
+    
+    private String handleCancel(String[] msgList){
+        long userID = Long.parseLong(msgList[1]);
+        long orderID = Long.parseLong(msgList[2]);
+        HashMap<String, String> resp = exchange.cancelOrder(userID, orderID);
+        return MessageFormatter.format(resp);
     }
     
 }

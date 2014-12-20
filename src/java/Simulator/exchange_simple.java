@@ -142,41 +142,55 @@ public class exchange_simple extends Exchange {
 		securityMap.get(symbol).ask_quant= value + valueAdd;
 	}
 
-        public String placeOrder(long userID, String sym, long price, long amount, int side, int type, long orderID)
+        public HashMap<String, String> placeOrder(long userID, String sym, long price, long amount, int side, int type, long orderID)
         {
-            long fill_qty = 0;
-            long fill_price = 0;
+            HashMap<String, String> result = new HashMap<String, String>();
             if(!securityExists(sym)){
-                return "order|" + Long.toString(orderID) + "|3|0|0|0";
-            }
-            if(side == 1 && price >= getBidPrice(sym))
-            {
-                fill_qty = -1*Math.min(amount, getBidQuantity(sym));
-                fill_price = getBidPrice(sym);
-            }
-            else if (side == 0 && price <= getAskPrice(sym))
-            {
-                fill_qty = Math.min(amount, getAskQuantity(sym));
-                fill_price = getAskPrice(sym);
+                result.put("type", "order");
+                result.put("orderID", Long.toString(orderID));
+                result.put("action", "3");
+                result.put("filled", "0");
+                result.put("remaining", "0");
+                result.put("money", "0");
+            } 
+            else {
+                long fill_qty = 0;
+                long fill_price = 0;
+            
+                if(side == 1 && price >= getBidPrice(sym))
+                {
+                    fill_qty = -1*Math.min(amount, getBidQuantity(sym));
+                    fill_price = getBidPrice(sym);
+                }
+                else if (side == 0 && price <= getAskPrice(sym))
+                {
+                    fill_qty = Math.min(amount, getAskQuantity(sym));
+                    fill_price = getAskPrice(sym);
+                }
+
+                String action = getActionString(fill_qty, amount);
+
+                String money = Long.toString(-1*fill_qty*fill_price);
+                
+                result.put("type", "order");
+                result.put("orderID", Long.toString(orderID));
+                result.put("action", action);
+                result.put("filled", Long.toString(fill_qty));
+                result.put("remaining", "0");
+                result.put("money", money);
+                
             }
             
-            String action;
-            if(fill_qty == amount){
-                action = "0";
-            } else if (Math.abs(fill_qty) > 0){
-                action = "1";
-            } else {
-                action = "3";
-            }
-            
-            String money = Long.toString(-1*fill_qty*fill_price);
-            
-            return "order|" + Long.toString(orderID) + "|" + action + "|" + Long.toString(fill_qty) + "|0|" + money;
+            return result;
                     
         }
         
-        public String cancelOrder(long userID, long orderID){
-            return "cancel|" + Long.toString(orderID) + "|0";
+        public HashMap<String, String> cancelOrder(long userID, long orderID){
+            HashMap<String, String> result = new HashMap<String, String>();
+            result.put("type", "cancel");
+            result.put("orderID", Long.toString(orderID));
+            result.put("success", "0");
+            return result;
         }
         
         public long getUserMoney(long userID){
@@ -212,5 +226,15 @@ public class exchange_simple extends Exchange {
 		}*/
 		
 	}
+        
+        private String getActionString(long fill_qty, long amount){
+            if(fill_qty == amount){
+                return "0";
+            } else if (Math.abs(fill_qty) > 0){
+                return "1";
+            } else {
+                return "3";
+            }
+        }
 
 }
