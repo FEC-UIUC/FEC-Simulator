@@ -25,4 +25,14 @@ public class MessageFormatter {
         return message_string.substring(0, message_string.length()-1);
     }
     
+    public static HashMap<String, String> parse(String message){
+        HashMap<String, String> message_map = new HashMap<String, String>();
+        String[] pairs = message.split("\\|");
+        for(String p : pairs){
+            String[] key_val = p.split("\\=", 2);
+            message_map.put(key_val[0], key_val[1]);
+        }
+        return message_map;
+    }
+    
 }

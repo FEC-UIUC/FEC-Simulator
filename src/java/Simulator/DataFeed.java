@@ -6,6 +6,7 @@
 package Simulator;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.websocket.Session;
@@ -49,13 +50,13 @@ public class DataFeed extends Thread {
                 Logger.getLogger(DataFeed.class.getName()).log(Level.SEVERE, null, ex);
             }
             for(String sym : exchange.getSymList()){
-                String snapshot = "";
                 try {
-                    snapshot = exchange.snapShot(sym);
+                    HashMap<String, String> snapshot = exchange.snapShot(sym);
+                    parent.sendToAll(MessageFormatter.format(snapshot));
                 } catch (Exception ex) {
                     Logger.getLogger(DataFeed.class.getName()).log(Level.SEVERE, null, ex);
                 }
-                parent.sendToAll(snapshot);
+                
             }
             long t1 = System.currentTimeMillis();
             try{

@@ -33,8 +33,8 @@ public class exchange_simple extends Exchange {
                 temp.sym = symbol;
                 temp.bid_price = Integer.parseInt(line_arr[0]);
                 temp.ask_price = Integer.parseInt(line_arr[1]);
-                temp.bid_quant = Integer.parseInt(line_arr[2]);
-                temp.ask_quant = Integer.parseInt(line_arr[3]);
+                temp.bid_qty = Integer.parseInt(line_arr[2]);
+                temp.ask_qty = Integer.parseInt(line_arr[3]);
                 securityMap.put(temp.sym, temp);
                 dataFeeds.put(temp.sym, marketData);
                 return true;
@@ -58,8 +58,8 @@ public class exchange_simple extends Exchange {
                     }
                     sec.bid_price = Integer.parseInt(line_arr[0]);
                     sec.ask_price = Integer.parseInt(line_arr[1]);
-                    sec.bid_quant = Integer.parseInt(line_arr[2]);
-                    sec.ask_quant = Integer.parseInt(line_arr[3]);
+                    sec.bid_qty = Integer.parseInt(line_arr[2]);
+                    sec.ask_qty = Integer.parseInt(line_arr[3]);
                 } else {
                     dataFeeds.remove(sym);
                     securityMap.remove(sym);
@@ -76,71 +76,24 @@ public class exchange_simple extends Exchange {
 		return false;
 	}
 	
-	public long getAskQuantity(String symbol){
-		if(securityExists(symbol)){
-			return securityMap.get(symbol).ask_quant;
-		}
-		return 0;
-	}
 	
-	public long getBidQuantity(String symbol){	
-		if(securityExists(symbol)){
-			return securityMap.get(symbol).bid_quant;
-		}
-		return 0;
-	}
-	
-	public long getBidPrice(String symbol){	
-		if(securityExists(symbol)){
-			return securityMap.get(symbol).bid_price;
-		}
-		return 0;
-	}
-	
-	public long getAskPrice(String symbol){
-		
-		if(securityExists(symbol)){
-			return securityMap.get(symbol).ask_price;
-		}
-		return 0;
-	}
-	
-	public String snapShot(String symbol) throws Exception {
+	public HashMap<String, String> snapShot(String symbol) throws Exception {
             if(securityExists(symbol)){
                 Security sec = securityMap.get(symbol);
-                return sec.getSnapshotString();
+                HashMap<String, String> result = new HashMap<String, String>();
+                result.put("type", "snapshot");
+                result.put("symbol", symbol);
+                result.put("bid_price", Long.toString(sec.bid_price));
+                result.put("ask_price", Long.toString(sec.ask_price));
+                result.put("bid_qty", Long.toString(sec.bid_qty));
+                result.put("ask_qty", Long.toString(sec.ask_qty));
+                return result;
             }
             else{
                 throw new Exception(symbol + " does not exist");
             }
 	}
 	
-	public void updateBidPrice(String symbol, long value){
-		
-		if(!securityExists(symbol))
-			return;
-	}
-	
-	public void updateAskPrice(String symbol, long value){
-		
-		if(!securityExists(symbol))
-			return;
-	}
-        
-	public void updateBidQuant(String symbol, long value){
-		
-		if(!securityExists(symbol))
-			return;
-	}
-        
-	public void updateAskQuant(String symbol, long valueAdd){
-		
-		if(!securityExists(symbol))
-			return;
-
-		long value=securityMap.get(symbol).ask_quant;
-		securityMap.get(symbol).ask_quant= value + valueAdd;
-	}
 
         public HashMap<String, String> placeOrder(String userID, String sym, long price, long amount, int side, int type, long orderID)
         {
@@ -156,16 +109,18 @@ public class exchange_simple extends Exchange {
             else {
                 long fill_qty = 0;
                 long fill_price = 0;
+                
+                Security sec = securityMap.get(sym);
             
-                if(side == 1 && price >= getBidPrice(sym))
+                if(side == 1 && price >= sec.bid_price)
                 {
-                    fill_qty = -1*Math.min(amount, getBidQuantity(sym));
-                    fill_price = getBidPrice(sym);
+                    fill_qty = -1*Math.min(amount, sec.bid_qty);
+                    fill_price = sec.bid_price;
                 }
-                else if (side == 0 && price <= getAskPrice(sym))
+                else if (side == 0 && price <= sec.ask_price)
                 {
-                    fill_qty = Math.min(amount, getAskQuantity(sym));
-                    fill_price = getAskPrice(sym);
+                    fill_qty = Math.min(amount, sec.ask_qty);
+                    fill_price = sec.ask_price;
                 }
 
                 String action = getActionString(fill_qty, amount);

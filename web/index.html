@@ -14,164 +14,196 @@
             messages = document.getElementById("messages");
             makeChart();
         });
+        
         var webSocket;
-		var messages;
-                var userID = "rickjames123";
-                var orderID = 1;
-                var orderHistory = {};
+        var messages;
+        var username = "rickjames123";
+        var orderID = 1;
+        var orderHistory = {};
 
-		function openSocket(){
-			if(webSocket !== undefined && webSocket.readyState !== WebSocket.CLOSED){
-			   writeResponse("WebSocket is already opened.");
-				return;
-			}
+        function openSocket(){
+            if(webSocket !== undefined && webSocket.readyState !== WebSocket.CLOSED){
+               writeResponse("WebSocket is already opened.");
+               return;
+            }
 
-			webSocket = new WebSocket("ws://localhost:8080/Simulator/server");
-			 
-			webSocket.onopen = function(event){
-				if(event.data === undefined)
-					return;
-				writeResponse(event.data);
-			};
+            webSocket = new WebSocket("ws://localhost:8080/Simulator/server");
 
-			webSocket.onmessage = function(event){
-			
-				msg = event.data.split("|");
-				if(msg[0] === 'message'){
-                                   m = "<b>" + msg[1] + ":</b> " + msg[2]; 
-  				   writeResponse(m);
-                                } else if (msg[0] === 'order'){
-                                    handleOrder(msg);
-                                } else if (msg[0] ==='cancel'){
-                                    handleCancel(msg);
-                                } else if (msg[0] ==='snapshot'){
-                                    handleSnapshot(msg);
-				} else if (msg[0] === 'data') {
-  				   var series = stockchart.series[0];
-				   var x = (new Date()).getTime()
-				   var y = $.parseJSON(msg[1]);
-				   if(y !== null){
-				     series.addPoint([x,y], true, true);
-				   }
-                                   $("#price-box").html(y.toString());
-				}
-			};
+            webSocket.onopen = function(event){
+                    if(event.data === undefined)
+                            return;
+                    writeResponse(event.data);
+            };
 
-			webSocket.onclose = function(event){
-				writeResponse("Connection closed");
-			};
-		}
-		
-		function startData(){
-		   webSocket.send("admin|start");
-		}
-		
-		function stopData(){
-		   webSocket.send("admin|stop");
-		}
-	   
-		function sendMessage(){
-			var text = document.getElementById("messageinput").value;
-			webSocket.send("message|" + text);
-                }
-	   
-		function closeSocket(){
-			webSocket.close();
-		}
+            webSocket.onmessage = messageHandler;
 
-		function writeResponse(text){
-			messages.innerHTML += "<br/>" + text;
-		}
-                
-                function clearFeed(){
-                    messages.innerHTML = "<br/>" 
+            webSocket.onclose = function(event){
+                writeResponse("Connection closed");
+            };
+        }
+        
+        function messageHandler(event){
+            msg = parseMessage(event.data);
+            if(msg['type'] === 'message'){
+               m = "<b>" + msg['from'] + ":</b> " + msg['message']; 
+               writeResponse(m);
+            } else if (msg['type'] === 'order'){
+                handleOrder(msg);
+            } else if (msg['type'] ==='cancel'){
+                handleCancel(msg);
+            } else if (msg['type'] ==='snapshot'){
+                handleSnapshot(msg);
+            } else if (msg['type'] === 'data') {
+               var series = stockchart.series[0];
+               var x = (new Date()).getTime()
+               var y = $.parseJSON(msg[1]);
+               if(y !== null){
+                 series.addPoint([x,y], true, true);
+               }
+               $("#price-box").html(y.toString());
+            }
+        }
+        
+        function parseMessage(message_string) {
+            var message = {};
+            var pairs = message_string.split("|");
+            for(var i=0; i < pairs.length; i++){
+                var key_val = pairs[i].split("=", 1);
+                message[key_val[0]] = key_val[1];
+            }
+            return message;
+        }
+        
+        function formatMessage(message_map) {
+            var message_string = "";
+            for(var key in message_map.keys()){
+                message_string += key + "=" + message_map[key] + "|";
+            }
+            return message_string.slice(0, -1);
+        }
+
+        function startData(){
+           webSocket.send("type=admin|command=start");
+        }
+
+        function stopData(){
+           webSocket.send("type=admin|command=stop");
+        }
+
+        function sendMessage(){
+                var message_text = document.getElementById("messageinput").value;
+                msg = {
+                    "type" : "message",
+                    "from" : username,
+                    "message" : message_text
                 }
-		
-                function handleOrder(){
-                    //UPDATED FORM order|orderID|action|filled|remaining|money
-                    var change = "";
-                    var order = orderHistory[msg[1]].split("|");
-                    if(msg[2] === 0){
-                        writeResponse("Order " + msg[1] + "was filled for " + msg[5]/100);
-                        change = "Filled";
-                    } else if(msg[2] === 1){
-                        writeResponse("Order " + msg[1] + "was partially filled for " + msg[5]/100 + " and has " + msg[4] + " remaining");
-                        change = "Partial Fill";
-                        order[4] = msg[4];
-                    } else if(msg[2] === 2){
-                        writeResponse("Order " + msg[1] + "was successfully placed");
-                        change = "Placed";
-                    } else if(msg[2] === 3){
-                        writeResponse("Order " + msg[1] + "was successfully canceled");
-                        change = "Canceled";
-                    }
-                    order[8] = change;
-                    //orderHistory[msg[1]] = {
-                    //    "symbol" : order[0],
-                    //    "price" : order[1],
-                    //}
-                    orderHistory[msg[1]] = (order[0] + "|" + order[1] + "|" + order[2] + "|" + order[3] + "|" + order[4] + "|" + order[5] + "|" + order[6] + "|" + order[7] + "|" + order[8]);
+                webSocket.send(formatMessage(msg));
+        }
+
+        function closeSocket(){
+                webSocket.close();
+        }
+
+        function writeResponse(text){
+                messages.innerHTML += "<br/>" + text;
+        }
+
+        function clearFeed(){
+            messages.innerHTML = "<br/>" 
+        }
+
+        function handleOrder(msg){
+            //UPDATED FORM order|orderID|action|filled|remaining|money
+            var change = "";
+            var order = orderHistory[msg["orderID"]].split("|");
+            if(msg["action"] === 0){
+                writeResponse("Order " + msg["orderID"] + "was filled for " + msg["money"]/100);
+                change = "Filled";
+            } else if(msg["action"] === 1){
+                writeResponse("Order " + msg["orderID"] + "was partially filled for " + msg["money"]/100 + " and has " + msg["remaining"] + " remaining");
+                change = "Partial Fill";
+                order[4] = msg["remaining"];
+            } else if(msg["action"] === 2){
+                writeResponse("Order " + msg["orderID"] + "was successfully placed");
+                change = "Placed";
+            } else if(msg["action"] === 3){
+                writeResponse("Order " + msg["orderID"] + "was successfully canceled");
+                change = "Canceled";
+            }
+            order[8] = change;
+            //orderHistory[msg["orderID"]] = (order[0] + "|" + order[1] + "|" + order[2] + "|" + order[3] + "|" + order[4] + "|" + order[5] + "|" + order[6] + "|" + order[7] + "|" + order[8]);
+        }
+
+        function sendCancel(){
+            var orderID = document.getElementByID("cancelOrder").value;
+            if(orderID !== ""){
+                writeResponse("Sending cancel order for " + orderID);
+                msg = {
+                    "type" : "cancel",
+                    "orderID" : orderID
                 }
-		
-                function sendCancel(){
-                    var cancelID = document.getElementByID("cancelOrder").value;
-                    if(cancelID !== ""){
-                        writeResponse("Sending cancel order for " + cancelID);
-                        writeResponse("cancel|" + userID + "|" + cancelID);
-                        //webSocket.send("cancel|" + userID + "|" + cancelID);
-                    }
+                writeResponse(formatMessage(msg));
+            }
+        }
+        
+        function handleCancel(msg){
+            if(msg["success"] == 0){
+                writeResponse("Cancel Failed on order " + msg["orderID"]);
+            } else if(msg["success"] == 1){
+                writeResponse("Cancel Success on order " + msg["orderID"]);
+            }
+
+        }
+
+        function handleSnapshot(msg){
+            writeResponse(msg["symbol"] + " Bid: " + msg["bid_price"] + "Quantity: " + msg["bid_qty"] + "Ask: " + msg["ask_price"] + "Quantity: " + msg["ask_qty"]);
+        }
+
+        function showHistory(){
+            for(j=1; j<orderID; j++){
+                var order = orderHistory[j].split("|");
+                var BuySell;
+                var Type;
+
+                if(order[5] == 0){
+                    BuySell = "Buy";
+                } else if(order[5] == 1) {
+                    BuySell = "Sell";
                 }
-                function handleCancel(){
-                    if(msg[3] == 0){
-                        writeResponse("Cancel Failed on order " + msg[2]);
-                    } else if(msg[3] == 1){
-                        writeResponse("Cancel Success on order " + msg[2]);
-                    }
-                    
+                if(order[6] == 1){
+                    Type = "Market Order";
+                } else if(order[6] == 0){
+                    Type = "Limit Order";
                 }
-                
-                function handleSnapshot(){
-                    writeResponse(msg[1] + " Bid: " + msg[2] + "Quantity: " + msg[4] + "Ask: " + msg[3] + "Quantity: " + msg[5]);
-                }
-                
-                function showHistory(){
-                    for(j=1; j<orderID; j++){
-                        var order = orderHistory[j].split("|");
-                        var BuySell;
-                        var Type;
-                        
-                        if(order[5] == 0){
-                            BuySell = "Buy";
-                        } else if(order[5] == 1) {
-                            BuySell = "Sell";
-                        }
-                        if(order[6] == 1){
-                            Type = "Market Order";
-                        } else if(order[6] == 0){
-                            Type = "Limit Order";
-                        }
-                        writeResponse("Order ID: " + order[7] + ", " + BuySell + ", " + Type + ", Stock: " + order[2] + " Price: $" + order[3]/100 + " Quantity: " + order[4] + " Status: " + order[8]);
-                        
-                    }
-                }
-                function sendOrder(){
-                    var stock = document.getElementById("orderstock").value;
-                    var quantity = document.getElementById("ordernumber").value;
-                    var price = document.getElementById("orderprice").value*100;
-                    var a = document.getElementById("BuySell");
-                    var BS = a.options[a.selectedIndex].value;
-                    var b = document.getElementById("OrderType");
-                    var Type = b.options[b.selectedIndex].value;
-                    var order = "order|" + userID + "|" + stock + "|" + price + "|" + quantity + "|" + BS + "|" + Type + "|" + orderID;
-                    if(price >= 1 && quantity % 1 == 0  && stock !== ""){
-                        //webSocket.send(order);
-                        writeResponse(order);
-                        orderHistory[orderID] = order + "|Pending";
-                    } else {
-                        writeResponse("Invalid Parameters for Order");
-                    }
-                    orderID = orderID + 1;
-                }
+                writeResponse("Order ID: " + order[7] + ", " + BuySell + ", " + Type + ", Stock: " + order[2] + " Price: $" + order[3]/100 + " Quantity: " + order[4] + " Status: " + order[8]);
+
+            }
+        }
+        function sendOrder(){
+            var symbol = document.getElementById("orderstock").value;
+            var quantity = document.getElementById("ordernumber").value;
+            var price = document.getElementById("orderprice").value*100;
+            var a = document.getElementById("BuySell");
+            var BS = a.options[a.selectedIndex].value;
+            var order_types = document.getElementById("OrderType");
+            var order_type = order_types.options[order_types.selectedIndex].value;
+            var order = "order|" + username + "|" + stock + "|" + price + "|" + quantity + "|" + BS + "|" + Type + "|" + orderID;
+            var order = {
+                "type" : "order",
+                "symbol" : symbol,
+                "price" : price,
+                "amount" : quantity,
+                "order_type" : order_type,
+                "orderID" : orderID
+            }
+            if(price >= 1 && quantity % 1 == 0  && stock !== ""){
+                webSocket.send(formatMessage(order));
+                //orderHistory[orderID] = formatMessage(order) + "|Pending";
+            } else {
+                writeResponse("Invalid Parameters for Order");
+            }
+            orderID = orderID + 1;
+        }
 	</script>
 </head>
 <body>

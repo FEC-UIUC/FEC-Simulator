@@ -21,7 +21,7 @@ public abstract class Exchange {
     
     public abstract boolean addSecurity(String fname, String symbol)  throws FileNotFoundException, Exception;
     
-    public abstract String snapShot(String symbol)  throws Exception;
+    public abstract HashMap<String, String> snapShot(String symbol)  throws Exception;
     
     public abstract Set<String> getSymList(); 
     

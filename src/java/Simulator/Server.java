@@ -23,7 +23,7 @@ public class Server {
     @OnOpen
     public void onOpen(Session session) {
         try {
-            session.getBasicRemote().sendText("type=message|message=Connection Established");
+            session.getBasicRemote().sendText("type=message|from=Server|message=Connection Established");
             sessions.put(session.getId(), session);
             System.out.println(session.getId() + " has opened a connection");
         } catch (IOException ex) {
@@ -64,29 +64,30 @@ public class Server {
     @OnMessage
     public void onMessage(String message, Session session) {
         System.out.println("Message from " + session.getId() + ": " + message);
-        String[] msgList = message.split("\\|");
-        if (msgList[0].equals("message")) 
+        HashMap<String, String> message_map = MessageFormatter.parse(message);
+        String msgType = message_map.get("type");
+        if (msgType.equals("message")) 
         {
-            String tosend = "type=message|message=" + session.getId() + "|" + msgList[1];
+            String tosend = "type=message|from=" + message_map.get("username") + "|message=" + message_map.get("message");
             sendToAll(tosend);
         } 
-        else if (msgList[0].equals("admin")) 
+        else if (msgType.equals("admin")) 
         {
-            handleAdmin(msgList);
+            handleAdmin(message_map, session.getId());
         }
-        else if (msgList[0].equals("order"))
+        else if (msgType.equals("order"))
         {
-            String resp = handleOrder(msgList);
+            String resp = handleOrder(message_map, session.getId());
             sendToUser(resp, session);
         }
-        else if (msgList[0].equals("cancel"))
+        else if (msgType.equals("cancel"))
         {
-            String resp = handleCancel(msgList);
+            String resp = handleCancel(message_map, session.getId());
             sendToUser(resp, session);
         }
-        else if (msgList[0].equals("new_user"))
+        else if (msgType.equals("new_user"))
         {
-            String resp = handleNewUser(msgList, session.getId());
+            String resp = handleNewUser(message_map, session.getId());
             sendToUser(resp, session);
         }
         
@@ -99,11 +100,9 @@ public class Server {
     }
     
     
-    private void handleAdmin(String[] msgList){
-        if (msgList.length < 2) {
-            return;
-        }
-        if (msgList[1].equals("start")) {
+    private void handleAdmin(HashMap<String, String> message_map, String userID){
+        //TODO - check if userID is the adminID
+        if (message_map.get("command").equals("start")) {
             try {
                 exchange.addSecurity("C:\\Users\\Greg Pastorek\\Documents\\NetBeansProjects\\Simulator\\src\\java\\Simulator\\marketData.txt", "GOOG");
             } catch (Exception ex) {
@@ -111,16 +110,17 @@ public class Server {
             }
             dataFeed = new DataFeed(this, exchange);
             dataFeed.start();
-        } else if (msgList[1].equals("stop") && dataFeed != null) {
+        } else if (message_map.get("command").equals("stop") && dataFeed != null) {
             dataFeed.end();
-        } else if (msgList[1].equals("boot")){
-            if(msgList.length >= 3){
-                bootUser(msgList[2]);                
-            }
+        } else if (message_map.get("command").equals("boot")){
+            bootUser(message_map.get("userID"));                
         }
     }
     
     private void bootUser(String userID){
+        if(userID == null) {
+            return;
+        }
         Session session_to_boot = sessions.get(userID);
         exchange.removeUser(userID);
         if(session_to_boot != null){
@@ -134,27 +134,25 @@ public class Server {
     }
     
     
-    private String handleOrder(String[] msgList) {
-        String userID = msgList[1];
-        String symbol = msgList[2];
-        long price = Long.parseLong(msgList[3]);
-        long amount = Long.parseLong(msgList[4]);
-        int side = Integer.parseInt(msgList[5]);
-        int type = Integer.parseInt(msgList[6]);
-        long orderID = Long.parseLong(msgList[7]);
-        HashMap<String, String> resp = exchange.placeOrder(userID, symbol, price, amount, side, type, orderID);
+    private String handleOrder(HashMap<String, String> message_map, String userID) {
+        String symbol = message_map.get("symbol");
+        long price = Long.parseLong(message_map.get("price"));
+        long amount = Long.parseLong(message_map.get("amount"));
+        int side = Integer.parseInt(message_map.get("side"));
+        int order_type = Integer.parseInt(message_map.get("order_type"));
+        long orderID = Long.parseLong(message_map.get("orderID"));
+        HashMap<String, String> resp = exchange.placeOrder(userID, symbol, price, amount, side, order_type, orderID);
         return MessageFormatter.format(resp);
     }
     
-    private String handleCancel(String[] msgList){
-        String userID = msgList[1];
-        long orderID = Long.parseLong(msgList[2]);
+    private String handleCancel(HashMap<String, String> message_map, String userID){
+        long orderID = Long.parseLong(message_map.get("orderID"));
         HashMap<String, String> resp = exchange.cancelOrder(userID, orderID);
         return MessageFormatter.format(resp);
     }
     
-    private String handleNewUser(String[] msgList, String userID) {
-        String username = msgList[1];
+    private String handleNewUser(HashMap<String, String> message_map, String userID) {
+        String username = message_map.get("username");
         HashMap<String, String> resp = exchange.addUser(userID, username);  /*TODO - add user, return new user message if new*/
         return MessageFormatter.format(resp);
     }
