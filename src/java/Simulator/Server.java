@@ -33,8 +33,6 @@ public class Server {
 
     public void sendToAll(String msg) {
         
-        System.out.println(sessions.size());
-        
         for (Entry<String, Session> e : sessions.entrySet()) {
             try{
                 e.getValue().getBasicRemote().sendText(msg);
