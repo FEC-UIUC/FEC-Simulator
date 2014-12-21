@@ -45,7 +45,7 @@
         }
         
         function messageHandler(event){
-            msg = parseMessage(event.data);
+            var msg = parseMessage(event.data);
             if(msg['type'] === 'message'){
                m = "<b>" + msg['from'] + ":</b> " + msg['message']; 
                writeResponse(m);
