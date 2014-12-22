@@ -112,12 +112,12 @@ public class exchange_simple extends Exchange {
                 
                 Security sec = securityMap.get(sym);
             
-                if(side == 1 && price >= sec.bid_price)
+                if(side == 1 && price <= sec.bid_price)
                 {
                     fill_qty = -1*Math.min(amount, sec.bid_qty);
                     fill_price = sec.bid_price;
                 }
-                else if (side == 0 && price <= sec.ask_price)
+                else if (side == 0 && price >= sec.ask_price)
                 {
                     fill_qty = Math.min(amount, sec.ask_qty);
                     fill_price = sec.ask_price;
