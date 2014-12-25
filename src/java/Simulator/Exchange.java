@@ -7,6 +7,7 @@ package Simulator;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -20,21 +21,21 @@ public abstract class Exchange {
     
     public abstract boolean addSecurity(String fname, String symbol)  throws FileNotFoundException, Exception;
     
-    public abstract String snapShot(String symbol)  throws Exception;
+    public abstract HashMap<String, String> snapShot(String symbol)  throws Exception;
     
     public abstract Set<String> getSymList(); 
     
-    public abstract String placeOrder(long userID, String sym, long price, long amount, int side, int type, long orderID);
+    public abstract HashMap<String, String> placeOrder(String userID, String sym, long price, long amount, int side, int type, long orderID);
     
-    public abstract String cancelOrder(long userID, long orderID);
+    public abstract HashMap<String, String> cancelOrder(String userID, long orderID);
     
-    public abstract long getUserMoney(long userID);
+    public abstract long getUserMoney(String userID);
     
-    public abstract List<String> getUserOrders(long userID); 
+    public abstract List<String> getUserOrders(String userID); 
     
-    public abstract boolean addUser(long userID, String username);
+    public abstract HashMap<String, String> addUser(String username, String userID);
         
-    public abstract boolean removeUser(long userID);
+    public abstract boolean removeUser(String userID);
     
     
     
