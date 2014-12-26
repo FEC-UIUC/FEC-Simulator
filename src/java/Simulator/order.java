@@ -28,19 +28,15 @@ public class Order(){
 		private type = type;
 	}
 
-	public void sendOrder(Sender sender){
+	public String toString(){
 		String message = "";
-		message += this.messagetype + '|';
-		message += this.userID + '|';
-		message += this.sym + '|';
-		message += this.price.toString() + '|';
-		message += this.qty.toString() + '|';
-		message += this.side.toString() + '|';
-		message += this.type.toString() + '|';
-
-		sender.send(message);
-		return;
-
+		message += 'msg=' + this.messagetype + '|';
+		message += 'userID='+ this.userID + '|';
+		message += 'sym='+this.sym + '|';
+		message += 'price=' + this.price.toString() + '|';
+		message += 'qty=' + this.qty.toString() + '|';
+		message += 'side=' + this.side.toString() + '|';
+		message += 'type=' + this.type.toString() + '|';
 	}
 
 	public void setUserID(String userID){
