@@ -135,11 +135,11 @@ public class Server {
     private String handleOrder(HashMap<String, String> message_map, String userID) {
         String symbol = message_map.get("symbol");
         long price = Long.parseLong(message_map.get("price"));
-        long amount = Long.parseLong(message_map.get("amount"));
+        long qty = Long.parseLong(message_map.get("qty"));
         int side = Integer.parseInt(message_map.get("side"));
-        int order_type = Integer.parseInt(message_map.get("order_type"));
+        int order_type = Integer.parseInt(message_map.get("type"));
         long orderID = Long.parseLong(message_map.get("orderID"));
-        HashMap<String, String> resp = exchange.placeOrder(userID, symbol, price, amount, side, order_type, orderID);
+        HashMap<String, String> resp = exchange.placeOrder(userID, symbol, price, qty, side, type, orderID);
         return MessageFormatter.format(resp);
     }
     
