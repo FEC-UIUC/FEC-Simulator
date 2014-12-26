@@ -20,7 +20,7 @@ public class ExchangeReceiver(){
 
 	}
 
-	public Order buildORder(HashMap<String, String> ordermap){
+	public Order buildOrder(HashMap<String, String> ordermap){
 		Order order = new Order(ordermap.get(userID), ordermap.get(sym), ordermap.get(price), ordermap.get(qty), ordermap.get(side), ordermap.get(type), ordermap.get(orderID));
 		return order;
 	}
