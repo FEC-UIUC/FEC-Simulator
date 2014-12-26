@@ -42,7 +42,7 @@ public class Order(){
 		message += 'userID='+ this.userID + '|';
 		message += 'sym='+this.sym + '|';
 		message += 'price=' + this.price.toString() + '|';
-		message += 'qty=' + this.qty.toString() + '|';
+		message += 'quantity=' + this.qty.toString() + '|';
 		message += 'side=' + this.side.toString() + '|';
 		message += 'type=' + this.type.toString() + '|';
 	}
