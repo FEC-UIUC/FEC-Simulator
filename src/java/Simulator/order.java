@@ -72,27 +72,27 @@ public class Order(){
 	}
 
 	public String getUserID(){
-		return this.userID;
+		return userID;
 	}
 
 	public String getSym(){
-		return this.sym;
+		return sym;
 	}
 
 	public Long getPrice(){
-		return this.price;
+		return price;
 	}
 
 	public Long getQty(){
-		return this.qty;
+		return qty;
 	}
 
 	public int getSide(){
-		return this.side;
+		return side;
 	}
 
 	public int getType(){
-		return this.type;
+		return type;
 	}
 
 }

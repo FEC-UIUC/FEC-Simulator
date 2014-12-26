@@ -6,15 +6,15 @@ package java.Simulator;
  */
 
 public class OrderBook(){
-
+	private final String security
 	public OrderBook(String security){
-		private final String security = security;
+		this.security = security;
 		HashMap<double, int> buySide = new HashMap<double, int>;
 		HashMap<double, int> sellSide = new HashMap<double, int>;
 	}
 
 	public getSecurity(){
-		return this.security;
+		return security;
 	}
-	public add
+
 }
