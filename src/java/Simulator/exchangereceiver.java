@@ -15,7 +15,7 @@ public class ExchangeReceiver(){
 		switch (messagetype){
 			case 1: messagetype == "order";
 				    Order order = buildOrder(message);
-				    //have the order object, process it on the exchange side
+				    //processorder - have the order object, process it on the exchange side
 		}
 
 	}

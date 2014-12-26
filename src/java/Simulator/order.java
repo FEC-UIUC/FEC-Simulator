@@ -17,15 +17,23 @@ type (0 - market order, 1 - limit order)|
 ***/
 
 public class Order(){
-	
+
+	private String messagetype;
+	private String userID;
+	private String sym;
+	private long price;
+	private long qty;
+	private int side;
+	private int type;
+
 	public Order(String userID, String sym, long price, long qty, int side, int type){
-		private messagetype = 'order';
-		private userID = userID;
-		private sym = sym;
-		private price = price;
-		private qty = qty;
-		private side = side;
-		private type = type;
+		this.messagetype = 'order';
+		this.userID = userID;
+		this.sym = sym;
+		this.price = price;
+		this.qty = qty;
+		this.side = side;
+		pthis.type = type;
 	}
 
 	public String toString(){
