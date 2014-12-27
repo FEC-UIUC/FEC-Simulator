@@ -79,11 +79,11 @@ public class Order{
 		return sym;
 	}
 
-	public Long getPrice(){
+	public long getPrice(){
 		return price;
 	}
 
-	public Long getQty(){
+	public long getQty(){
 		return qty;
 	}
 
