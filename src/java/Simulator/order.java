@@ -1,5 +1,8 @@
 package Simulator;
 
+import java.util.HashMap;
+import java.util.Map;
+
 
 /**
  *
@@ -18,7 +21,7 @@ type (0 - market order, 1 - limit order)|
 
 public class Order{
 
-	private String message_type;
+        private long orderID;
 	private String userID;
 	private String sym;
 	private long price;
@@ -26,8 +29,8 @@ public class Order{
 	private int side;
 	private int order_type;
 
-	public Order(String userID, String sym, long price, long qty, int side, int order_type){
-		this.message_type = "order";
+	public Order(long orderID, String userID, String sym, long price, long qty, int side, int order_type){
+                this.orderID = orderID;
 		this.userID = userID;
 		this.sym = sym;
 		this.price = price;
@@ -35,18 +38,9 @@ public class Order{
 		this.side = side;
 		this.order_type = order_type;
 	}
-
-	public String toString(){
-		String message = "";
-		message += "message_type=" + this.message_type + "|";
-		message += "userID="+ this.userID + "|";
-		message += "sym="+this.sym + "|";
-		message += "price=" + String.valueOf(this.price) + "|";
-		message += "quantity=" + String.valueOf(this.qty) + "|";
-		message += "side=" + String.valueOf(this.side) + "|";
-		message += "order_type=" + String.valueOf(this.order_type) + "|";
-                
-                return message;
+        
+        public void setOrderID(long orderID){
+		this.orderID = orderID;
 	}
 
 	public void setUserID(String userID){
@@ -71,6 +65,10 @@ public class Order{
 
 	public void setType(int order_type){
 		this.order_type = order_type;
+	}
+        
+        public long getOrderID(){
+		return orderID;
 	}
 
 	public String getUserID(){
