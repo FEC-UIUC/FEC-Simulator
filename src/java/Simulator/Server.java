@@ -23,7 +23,7 @@ public class Server {
     @OnOpen
     public void onOpen(Session session) {
         try {
-            session.getBasicRemote().sendText("type=message|from=Server|message=Connection Established");
+            session.getBasicRemote().sendText("message_type=message|from=Server|message=Connection Established");
             sessions.put(session.getId(), session);
             System.out.println(session.getId() + " has opened a connection");
         } catch (IOException ex) {
@@ -63,10 +63,10 @@ public class Server {
     public void onMessage(String message, Session session) {
         System.out.println("Message from " + session.getId() + ": " + message);
         HashMap<String, String> message_map = MessageFormatter.parse(message);
-        String msgType = message_map.get("type");
+        String msgType = message_map.get("message_type");
         if (msgType.equals("message")) 
         {
-            String tosend = "type=message|from=" + message_map.get("username") + "|message=" + message_map.get("message");
+            String tosend = "message_type=message|from=" + message_map.get("username") + "|message=" + message_map.get("message");
             sendToAll(tosend);
         } 
         else if (msgType.equals("admin")) 
@@ -123,7 +123,7 @@ public class Server {
         exchange.removeUser(userID);
         if(session_to_boot != null){
             try {
-                sendToUser("type=message|message=You have been booted.", session_to_boot);
+                sendToUser("message_type=message|message=You have been booted.", session_to_boot);
                 session_to_boot.close();
             } catch (IOException ex) {
                 Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
@@ -137,9 +137,9 @@ public class Server {
         long price = Long.parseLong(message_map.get("price"));
         long qty = Long.parseLong(message_map.get("quantity"));
         int side = Integer.parseInt(message_map.get("side"));
-        int order_type = Integer.parseInt(message_map.get("type"));
+        int order_type = Integer.parseInt(message_map.get("order_type"));
         long orderID = Long.parseLong(message_map.get("orderID"));
-        HashMap<String, String> resp = exchange.placeOrder(userID, symbol, price, qty, side, type, orderID);
+        HashMap<String, String> resp = exchange.placeOrder(userID, symbol, price, qty, side, order_type, orderID);
         return MessageFormatter.format(resp);
     }
     
