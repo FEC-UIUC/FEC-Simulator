@@ -57,9 +57,10 @@ function makeChart() {
         }],
             
         series : [{
-            name : 'Live data',
-            type : 'line',
-            data : []
+            name : 'OHLC',
+            type : 'ohlc',
+            data : [],
+            yAxis: 0
         },{
             type: 'column',
             name: 'Volume',

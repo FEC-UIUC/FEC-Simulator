@@ -85,6 +85,7 @@ public class exchange_simple extends Exchange {
                 result.put("symbol", symbol);
                 result.put("bid_price", Long.toString(sec.bid_price));
                 result.put("ask_price", Long.toString(sec.ask_price));
+                result.put("last_price", Long.toString((sec.ask_price+sec.bid_price)/2));
                 result.put("bid_qty", Long.toString(sec.bid_qty));
                 result.put("ask_qty", Long.toString(sec.ask_qty));
                 return result;

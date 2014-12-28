@@ -8,8 +8,10 @@
         float: left;
     }
 </style>
-<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
-<script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+<!--<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script> -->
+<script src="js/include/jquery-1.11.2.min.js"></script>
+<script src="js/include/jquery-migrate-1.2.1.min.js"></script>
 <script src="http://code.highcharts.com/stock/highstock.js"></script>
 <script src="http://code.highcharts.com/stock/modules/exporting.js"></script>
 <script src="js/security_chart.js"></script>
@@ -48,21 +50,24 @@
             webSocket.onclose = function(event){
                 writeResponse("Connection closed");
             };
+            
+            //TODO - send new_user and handle new_user response
+            
         }
         
         function messageHandler(event){
             var msg = parseMessage(event.data);
-            if(msg['type'] === 'message'){
+            if(msg['message_type'] === 'message'){
                m = "<b>" + msg['from'] + ":</b> " + msg['message']; 
                writeResponse(m);
             } 
-            else if (msg['type'] === 'order'){
+            else if (msg['message_type'] === 'order'){
                 handleOrder(msg);
             } 
-            else if (msg['type'] ==='cancel'){
+            else if (msg['message_type'] ==='cancel'){
                 handleCancel(msg);
             } 
-            else if (msg['type'] ==='snapshot'){
+            else if (msg['message_type'] ==='snapshot'){
                 handleSnapshot(msg);
             } 
         }
@@ -86,11 +91,11 @@
         }
 
         function startData(){
-           webSocket.send("type=admin|command=start");
+           webSocket.send("message_type=admin|command=start");
         }
 
         function stopData(){
-           webSocket.send("type=admin|command=stop");
+           webSocket.send("message_type=admin|command=stop");
         }
 
         function sendMessage(){
@@ -130,7 +135,7 @@
             order["filled"] += parseInt(msg["filled"]);
             
             var side = (order["side"] == "BUY") ? 1 : -1;
-            securities[msg["symbol"]] += parseInt(msg["filled"]) * side;
+            securities[msg["symbol"]]['position'] += parseInt(msg["filled"]) * side;
             var action = parseInt(msg["action"]);
             
             if(action === 0){
@@ -152,18 +157,19 @@
             
             orders[msg["orderID"]] = order;
             
+            updateCurrentOrdersTable(order);
+            
         }
 
 
-        function sendCancel(){
-            var orderID = document.getElementByID("cancelOrder").value;
-            if(orderID !== ""){
+        function sendCancel(orderID){
+            if(orderID != null){
                 writeResponse("Sending cancel order for " + orderID);
-                msg = {
+                var msg = {
                     "type" : "cancel",
                     "orderID" : orderID
                 }
-                writeResponse(formatMessage(msg));
+                webSocket.send(formatMessage(msg));
             }
         }
         
@@ -177,8 +183,8 @@
             } else if(msg["success"] == 1){
                 writeResponse("Cancel Success on order " + msg["orderID"]);
                 orders[msg["orderID"]]["status"] = "Canceled";
+                updateCurrentOrdersTable(orders[msg["orderID"]]);
             }
-
         }
 
 
@@ -193,15 +199,19 @@
                     'ask_price' : 0,
                     'bid_qty' : 0,
                     'ask_qty' : 0,
+                    "last_price" : 0,
                     'position' : 0,
                     'paid' : 0,
-                    'value' : 0
+                    'value' : 0,
+                    "total_pnl" : 0,
+                    'tablepointer' : null
                 };
             } 
 
             var t = (new Date()).getTime()
             var bid_price = parseInt(msg['bid_price'])/100;
             var ask_price = parseInt(msg['ask_price'])/100;
+            var last_price = parseInt(msg['last_price'])/100;
             var bid_qty = parseInt(msg['bid_qty']);
             var ask_qty = parseInt(msg['ask_qty']);
             var open_price = (bid_price+ask_price)/2;
@@ -214,10 +224,13 @@
             securities[msg['symbol']]['ask_price'] = ask_price;
             securities[msg['symbol']]['bid_qty'] = bid_qty;
             securities[msg['symbol']]['ask_qty'] = ask_qty;
+            securities[msg['symbol']]['last_price'] = last_price;
+            securities[msg['symbol']]['total_pnl'] += securities[msg['symbol']]['value'] - securities[msg['symbol']]['paid']; 
             
+            var bar = [open_price, open_price+1, close_price-1, close_price];
             
             if(msg['symbol'] == chart_security){
-                stockchart.series[0].addPoint([t, open_price], true, true);
+                stockchart.series[0].addPoint([t,bar], true, true);
                 stockchart.series[1].addPoint([t,bid_qty+ask_qty], true, true);
                 $("#price-box").html(open_price.toString());
             }
@@ -227,26 +240,6 @@
         }
 
 
-        function showHistory(){
-            for(j=1; j<orderID; j++){
-                var order = orderHistory[j].split("|");
-                var BuySell;
-                var Type;
-
-                if(order[5] == 0){
-                    BuySell = "Buy";
-                } else if(order[5] == 1) {
-                    BuySell = "Sell";
-                }
-                if(order[6] == 1){
-                    Type = "Market Order";
-                } else if(order[6] == 0){
-                    Type = "Limit Order";
-                }
-                writeResponse("Order ID: " + order[7] + ", " + BuySell + ", " + Type + ", Stock: " + order[2] + " Price: $" + order[3]/100 + " Quantity: " + order[4] + " Status: " + order[8]);
-
-            }
-        }
         function sendOrder(){
             var symbol = document.getElementById("orderstock").value;
             var quantity = document.getElementById("ordernumber").value;
@@ -262,7 +255,7 @@
                 "side" : BS,
                 "quantity" : quantity,
                 "order_type" : order_type,
-                "orderID" : orderID
+                "orderID" : orderID,
             }
             
             if(price > 0){
@@ -275,13 +268,84 @@
                     "filled" : 0,
                     "remaining" : parseInt(quantity),
                     "status" : "Pending",
+                    "tablepointer" : null
                 };
+                updateCurrentOrdersTable(orders[orderID]);
             } else {
                 writeResponse("Invalid Parameters for Order");
             }
-            orderID++;
+            orderID++;            
         }
         
+        
+        orderStatusStyleMap = {
+            "Pending" : "background-color:grey;",
+            "Resting" : "background-color:white;",
+            "Partial Filled" : "background-color:yellow;",
+            "Filled" : "background-color:green;",
+            "Canceled" : "background-color:red;"
+        }
+        
+        
+        function updateCurrentOrdersTable(order){
+            
+            var order_row = order["tablepointer"]; 
+            
+            if(order_row == null){
+                order_row = $(".current-orders-row").clone();
+                order_row.attr("id", "order-row-" + order["orderID"].toString());
+                order["tablepointer"] = order_row;
+                $("#current-orders-tbody").append(order_row);
+            }
+            
+            for(key in order){
+              if(key != "status" || key != "tablepointer"){
+                order_row.find("." + key).html(order[key]);   
+              }
+            }
+            
+            order_row.attr("style", orderStatusStyleMap[order["status"]]);
+            
+            var cancel_order_button = order_row.find(".cancel-order").find("button");
+            //cancel_order_button.attr("id", "cancel-order-button-" + order["orderID"].toString())
+            cancel_order_button.click(function(e){ sendCancel(order["orderID"]);});
+        }
+        
+        
+        function removeFromCurrentOrdersTable(order){
+            var order_row = order["tablepointer"];
+            var order_row_id = "order-row-" + order["orderID"].toString();
+            $("#current-orders-tbody").remove("#" + order_row_id);
+        }
+
+        
+        function updateSecurityTable(security) {
+            var security_row = security["tablepointer"];
+            
+            if (security_row == null) {
+                security_row = $(".securities-row").clone();
+                security_row.attr("id", "security-row-" + order["symbol"]);
+                order["tablepointer"] = security_row;
+                $("#securities-tbody").append(security_row);
+            }
+            
+            for(key in security){
+              if(key != "price_series" || key != "volume_series" || key != "tablepointer"){
+                security_row.find("." + key).html(security[key]);   
+              }
+            }
+
+            security_row.find(".unrealized_pnl").html(security['value'] - security['paid']);
+            
+            var open_button = order_row.find(".open-order-window").find("button");
+            open_button.click(function(e){ openOrderWindow(security["symbol"]);});    
+        }
+        
+        
+        function removeFromSecuritiesTable(security){
+            var security_row_id = "order-row-" + security["symbol"].toString();
+            $("#securities-tbody").remove("#" + security_row_id);
+        }
         
         
 	</script>
@@ -292,9 +356,12 @@
   <br>
   <span id="form-notification"></span><br> 
   <br>
-  <div id="chart-area"></div>
   
-  <div id="order-entry">
+  <div id="chart-area">
+      
+  </div>
+  
+  <div id="order-entry" class="form-row">
     <div class="order-entry-col">
       <label for="orderstock">Stock to Order</label>
       <input type="text" id="orderstock"/> <br>
@@ -309,21 +376,42 @@
         <option selected="selected" value="0">Buy</option>
         <option value="1">Sell</option>
       </select>
+      
       <select id="OrderType" size="2">
         <option selected="selected" value="0">Market Order</option>
         <option value="1">Limit Order</option>
       </select>
+      
       <button type="button" onclick="sendOrder();" >Send Order</button>
-      <label for="cancelOrder"> Cancel Order </label>
-      <input type="text" id="cancelOrder"/>
-      <button type="button" onclick="sendCancel();">Cancel Order</button>
+      
     </div>
     <div class="order-entry-col">
-	ay
+	
     </div>
   </div>
   
-  <div>
+  
+  <div class="form-row">
+      
+      <div class="form-col">
+        <table id="securities-table">
+            <thead><th>Symbol</th> <th>Order Window</th> <th>Best Bid</th> <th>Best Ask</th> <th>Bid Qty</th> <th>Ask Qty</th> 
+            <th>Position</th> <th>Paid</th> <th>Value</th> <th>Unrealized P&L</th> <th>Total P&L</th> </thead>
+            <tbody id="securities-tbody"></tbody>
+        </table>
+      </div>
+      
+      
+      <div class="form-col">
+        <table id="current-orders-table">
+            <thead><th>OrderID</th> <th>Symbol</th> <th>Side</th> <th>Order Type</th> <th>Price</th> <th>Remaining</th> <th>Filled</th></thead>
+            <tbody id="current-orders-tbody"></tbody>
+        </table>
+      </div>
+      
+  </div>
+  
+  <div class="form-row">
 	<button type="button" onclick="openSocket();" >Open</button>
 	<button type="button" onclick="sendMessage();" >Send Message</button>
 	<button type="button" onclick="closeSocket();" >Close</button> <br>
@@ -345,5 +433,42 @@
 <div id="messages"></div>
 
 </div>
+ 
+ 
+  
+<div id="templates" style="visible:hidden;">
+    
+        <tr class="current-orders-row">
+            <td class="orderID"></td>
+            <td class="symbol"></td>
+            <td class="side"></td>
+            <td class="order_type"></td>
+            <td class="price"></td>
+            <td class="remaining"></td>
+            <td class="filled"></td>
+            <td class="order-cancel">
+                <button type="button">Cancel Order</button>
+            </td>
+        </tr>
+        
+        <tr class="securities-row">
+            <td class="symbol"></td>
+            <td class="open-order-window">
+                <button type="button">Open</button>
+            </td>
+            <td class="bid_price"></td>
+            <td class="ask_price"></td>
+            <td class="last_price"></td>
+            <td class="bid_qty"></td>
+            <td class="ask_qty"></td>
+            <td class="position"></td>
+            <td class="paid"></td>
+            <td class="value"></td>
+            <td class="unrealized_pnl"></td>
+            <td class="total_pnl"></td>
+        </tr>
+    
+</div>  
+  
 </body>
 </html>

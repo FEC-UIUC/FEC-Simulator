@@ -16,6 +16,7 @@ public class TestMessages {
     }
     
     public static void testOrder(){
+        /*
         Order order = new Order("user123", "AAPL", 100, 100, 1, 1);
         String ordermessage = order.toString();
         System.out.println(ordermessage); // message_type=order|userID=user123|sym=AAPL|price=100|quantity=100|side=1|order_type=1|
@@ -26,6 +27,6 @@ public class TestMessages {
         System.out.println(ordermap.get("price"));
         System.out.println(ordermap.get("quantity"));
         System.out.println(ordermap.get("side"));
-        System.out.println(ordermap.get("order_type"));
+        System.out.println(ordermap.get("order_type")); */
     }
 }
