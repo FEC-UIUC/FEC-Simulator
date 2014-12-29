@@ -66,7 +66,7 @@ public class Server {
         String msgType = message_map.get("message_type");
         if (msgType.equals("message")) 
         {
-            String tosend = "message_type=message|from=" + message_map.get("username") + "|message=" + message_map.get("message");
+            String tosend = "message_type=message|from=" + message_map.get("from") + "|message=" + message_map.get("message");
             sendToAll(tosend);
         } 
         else if (msgType.equals("admin")) 
@@ -103,6 +103,10 @@ public class Server {
         if (message_map.get("command").equals("start")) {
             try {
                 exchange.addSecurity("C:\\Users\\Greg Pastorek\\Documents\\NetBeansProjects\\Simulator\\src\\java\\Simulator\\marketData.txt", "GOOG");
+                exchange.addSecurity("C:\\Users\\Greg Pastorek\\Documents\\NetBeansProjects\\Simulator\\src\\java\\Simulator\\marketData2.txt", "AAPL");
+                exchange.addSecurity("C:\\Users\\Greg Pastorek\\Documents\\NetBeansProjects\\Simulator\\src\\java\\Simulator\\marketData3.txt", "MSFT");
+                exchange.addSecurity("C:\\Users\\Greg Pastorek\\Documents\\NetBeansProjects\\Simulator\\src\\java\\Simulator\\marketData4.txt", "FB");
+                exchange.addSecurity("C:\\Users\\Greg Pastorek\\Documents\\NetBeansProjects\\Simulator\\src\\java\\Simulator\\marketData5.txt", "AMZN");
             } catch (Exception ex) {
                 Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
             }

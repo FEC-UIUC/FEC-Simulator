@@ -7,6 +7,15 @@
     .order-entry-col{
         float: left;
     }
+    
+    .form-row {
+        top: 0pt;
+    }
+    
+    .form-col {
+        float: left;
+        top: 0pt;
+    }
 </style>
 <!--<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
 <script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script> -->
@@ -19,14 +28,18 @@
         $(function(){
             $('#header').load("http://fec.ec.illinois.edu/header.php");
             messages = document.getElementById("messages");
-            makeChart();
+            //makeChart();
+            openSocket();
+            sendNewUser();
         });
+
+        var CHAT_WINDOW_CHAR_LENGTH = 37;
         
         var webSocket;
         var messages;
         var username = "rickjames123";
-        var money = 0;
-        var orderID = 1;
+        var _money = 0;
+        var next_orderID = 1;
         
         var securities = {};
         var orders = {};
@@ -55,21 +68,27 @@
             
         }
         
+        function closeSocket(){
+            webSocket.close();
+        }
+        
         function messageHandler(event){
             var msg = parseMessage(event.data);
             if(msg['message_type'] === 'message'){
-               m = "<b>" + msg['from'] + ":</b> " + msg['message']; 
-               writeResponse(m);
+                handleChatMessage(msg);
             } 
-            else if (msg['message_type'] === 'order'){
+            else if (msg['message_type'] == 'order'){
                 handleOrder(msg);
             } 
-            else if (msg['message_type'] ==='cancel'){
+            else if (msg['message_type'] =='cancel'){
                 handleCancel(msg);
             } 
-            else if (msg['message_type'] ==='snapshot'){
+            else if (msg['message_type'] =='snapshot'){
                 handleSnapshot(msg);
-            } 
+            }
+            else if (msg['message_type'] == 'new_user'){
+                handleNewUser(msg);
+            }
         }
         
         function parseMessage(message_string) {
@@ -89,6 +108,10 @@
             }
             return message_string.slice(0, -1);
         }
+        
+        function send(msg){
+            webSocket.send(formatMessage(msg));
+        }
 
         function startData(){
            webSocket.send("message_type=admin|command=start");
@@ -98,28 +121,93 @@
            webSocket.send("message_type=admin|command=stop");
         }
 
-        function sendMessage(){
-                var message_text = document.getElementById("messageinput").value;
+        function sendChatMessage(){
+                var message_text = $("#messageinput").val();
                 msg = {
-                    "type" : "message",
+                    "message_type" : "message",
                     "from" : username,
                     "message" : message_text
                 }
-                webSocket.send(formatMessage(msg));
+                send(msg);
+                $("#messageinput").val("");
+        }
+        
+        function handleChatMessage(msg) {
+            var m = "<b>" + msg['from'] + ":</b> " + msg['message']; 
+            writeResponse(m);
         }
 
-        function closeSocket(){
-                webSocket.close();
-        }
+        
 
         function writeResponse(text){
+            if(text.length > CHAT_WINDOW_CHAR_LENGTH){
+                var remaining = text.slice(CHAT_WINDOW_CHAR_LENGTH);
+                messages.innerHTML += "<br/>" + text.slice(0, CHAT_WINDOW_CHAR_LENGTH);
+                writeResponse(remaining);
+            } else {
                 messages.innerHTML += "<br/>" + text;
+            }
         }
 
         function clearFeed(){
             messages.innerHTML = "<br/>" 
         }
+        
+        
+        function sendNewUser() {
+            var message = {
+                'message_type' : "new_user",
+                'username' : username
+            }
+            send(message);
+        }
+        
+        
+        function handleNewUser(msg){
+            var money = parseInt(msg['money']);
+            setMoney(money);
+            $("#username-span").html(username);
+        }
 
+
+        function sendOrder(symbol){
+            var quantity = document.getElementById("ordernumber").value;
+            var price = document.getElementById("orderprice").value*100;
+            var a = document.getElementById("BuySell");
+            var BS = a.options[a.selectedIndex].value;
+            var order_types = document.getElementById("OrderType");
+            var order_type = order_types.options[order_types.selectedIndex].value;
+            var orderID = next_orderID;
+            var message = {
+                "message_type" : "order",
+                "symbol" : symbol,
+                "price" : price,
+                "side" : BS,
+                "quantity" : quantity,
+                "order_type" : order_type,
+                "orderID" : orderID,
+            }
+            
+            if(price > 0){
+                webSocket.send(formatMessage(message));
+                orders[orderID] = {
+                    "orderID" : orderID,
+                    "symbol" : symbol,
+                    "price" : parseInt(price),
+                    "side" : (parseInt(BS) == 0) ? "BUY" : "SELL",
+                    "order_type" : parseInt(order_type),
+                    "filled" : 0,
+                    "remaining" : parseInt(quantity),
+                    "status" : "Pending",
+                    "tablepointer" : null
+                };
+                updateCurrentOrdersTable(orders[orderID]);
+            } else {
+                writeResponse("Invalid Parameters for Order");
+            }
+            next_orderID++;            
+        }
+        
 
         function handleOrder(msg){
 
@@ -128,22 +216,24 @@
               return;
             }
             
-            money += parseInt(msg["money"]);
+            addMoney(parseInt(msg["money"]));
             
             order = orders[msg["orderID"]];
             order["remaining"] = parseInt(msg["remaining"]);
             order["filled"] += parseInt(msg["filled"]);
             
+            securities[order["symbol"]]["paid"] += parseInt(msg["money"]);
+            
             var side = (order["side"] == "BUY") ? 1 : -1;
-            securities[msg["symbol"]]['position'] += parseInt(msg["filled"]) * side;
+            securities[order["symbol"]]['position'] += parseInt(msg["filled"]);
             var action = parseInt(msg["action"]);
             
             if(action === 0){
-                writeResponse("Order " + msg["orderID"] + "was filled for " + msg["money"]/100);
+                writeResponse("Order " + msg["orderID"] + "was filled for " + -1*side*msg["money"]/100);
                 order["status"] = "Filled";
             } 
             else if(action === 1){
-                writeResponse("Order " + msg["orderID"] + "was partially filled for " + msg["money"]/100 + " and has " + msg["remaining"] + " remaining");
+                writeResponse("Order " + msg["orderID"] + "was partially filled for " + -1*side*msg["money"]/100 + " and has " + msg["remaining"] + " remaining");
                 order["status"] = "Partial Filled";
             } 
             else if(action === 2){
@@ -166,7 +256,7 @@
             if(orderID != null){
                 writeResponse("Sending cancel order for " + orderID);
                 var msg = {
-                    "type" : "cancel",
+                    "message_type" : "cancel",
                     "orderID" : orderID
                 }
                 webSocket.send(formatMessage(msg));
@@ -193,6 +283,7 @@
 
             if(!securities.hasOwnProperty(msg['symbol'])){
                 securities[msg['symbol']] = {
+                    'symbol' : "",
                     'price_series' : [],
                     'volume_series' : [],
                     'bid_price' : 0,
@@ -206,6 +297,7 @@
                     "total_pnl" : 0,
                     'tablepointer' : null
                 };
+                $("#ordersymbol").append("<option id='" + msg["symbol"] + "'value='" + msg["symbol"] + "'>" + msg["symbol"] + "</option>");
             } 
 
             var t = (new Date()).getTime()
@@ -217,68 +309,34 @@
             var open_price = (bid_price+ask_price)/2;
             var close_price = (bid_price+ask_price)/2;
             
-            securities[msg['symbol']]['price_series'].push([t, open_price]);
-            securities[msg['symbol']]['volume_series'].push([t,bid_qty+ask_qty]);
-            securities[msg['symbol']]['value'] = securities['position'] * open_price;
-            securities[msg['symbol']]['bid_price'] = bid_price;
-            securities[msg['symbol']]['ask_price'] = ask_price;
-            securities[msg['symbol']]['bid_qty'] = bid_qty;
-            securities[msg['symbol']]['ask_qty'] = ask_qty;
-            securities[msg['symbol']]['last_price'] = last_price;
-            securities[msg['symbol']]['total_pnl'] += securities[msg['symbol']]['value'] - securities[msg['symbol']]['paid']; 
-            
             var bar = [open_price, open_price+1, close_price-1, close_price];
             
+            var security = securities[msg['symbol']];
+            
+            security['symbol'] = msg['symbol'];
+            security['price_series'].push([t, bar]);
+            security['volume_series'].push([t,bid_qty+ask_qty]);
+            security['value'] = (security['position'] * open_price);
+            security['bid_price'] = bid_price;
+            security['ask_price'] = ask_price;
+            security['bid_qty'] = bid_qty;
+            security['ask_qty'] = ask_qty;
+            security['last_price'] = last_price;
+            security['total_pnl'] += (security['value'] - security['paid']); 
+            
+            updateSecurityTable(securities[msg['symbol']]);
+            
             if(msg['symbol'] == chart_security){
-                stockchart.series[0].addPoint([t,bar], true, true);
-                stockchart.series[1].addPoint([t,bid_qty+ask_qty], true, true);
-                $("#price-box").html(open_price.toString());
+                //stockchart.series[0].addPoint([t,bar], true, true);
+                //stockchart.series[1].addPoint([t,bid_qty+ask_qty], true, true);
             }
             
-            writeResponse(msg["symbol"] + " Bid: " + msg["bid_price"] + "Quantity: " + msg["bid_qty"] + "Ask: " + msg["ask_price"] + "Quantity: " + msg["ask_qty"]);
+            //writeResponse(msg["symbol"] + " Bid: " + msg["bid_price"] + "Quantity: " + msg["bid_qty"] + "Ask: " + msg["ask_price"] + "Quantity: " + msg["ask_qty"]);
         
-        }
-
-
-        function sendOrder(){
-            var symbol = document.getElementById("orderstock").value;
-            var quantity = document.getElementById("ordernumber").value;
-            var price = document.getElementById("orderprice").value*100;
-            var a = document.getElementById("BuySell");
-            var BS = a.options[a.selectedIndex].value;
-            var order_types = document.getElementById("OrderType");
-            var order_type = order_types.options[order_types.selectedIndex].value;
-            var message = {
-                "type" : "order",
-                "symbol" : symbol,
-                "price" : price,
-                "side" : BS,
-                "quantity" : quantity,
-                "order_type" : order_type,
-                "orderID" : orderID,
-            }
-            
-            if(price > 0){
-                webSocket.send(formatMessage(message));
-                orders[orderID] = {
-                    "symbol" : symbol,
-                    "price" : parseInt(price),
-                    "side" : (parseInt(BS) == 0) ? "BUY" : "SELL",
-                    "order_type" : parseInt(order_type),
-                    "filled" : 0,
-                    "remaining" : parseInt(quantity),
-                    "status" : "Pending",
-                    "tablepointer" : null
-                };
-                updateCurrentOrdersTable(orders[orderID]);
-            } else {
-                writeResponse("Invalid Parameters for Order");
-            }
-            orderID++;            
         }
         
         
-        orderStatusStyleMap = {
+        var orderStatusStyleMap = {
             "Pending" : "background-color:grey;",
             "Resting" : "background-color:white;",
             "Partial Filled" : "background-color:yellow;",
@@ -292,14 +350,14 @@
             var order_row = order["tablepointer"]; 
             
             if(order_row == null){
-                order_row = $(".current-orders-row").clone();
+                order_row = $("#templates").find(".current-orders-row").clone();
                 order_row.attr("id", "order-row-" + order["orderID"].toString());
                 order["tablepointer"] = order_row;
                 $("#current-orders-tbody").append(order_row);
             }
             
             for(key in order){
-              if(key != "status" || key != "tablepointer"){
+              if(key != "status" && key != "tablepointer"){
                 order_row.find("." + key).html(order[key]);   
               }
             }
@@ -323,29 +381,40 @@
             var security_row = security["tablepointer"];
             
             if (security_row == null) {
-                security_row = $(".securities-row").clone();
-                security_row.attr("id", "security-row-" + order["symbol"]);
-                order["tablepointer"] = security_row;
+                security_row = $("#templates").find(".securities-row").clone();
+                security_row.attr("id", "security-row-" + security["symbol"]); 
+                var open_button = security_row.find(".open-order-window").find("button");
+                open_button.click(function(e){ sendOrder(security["symbol"]);});  
+                security["tablepointer"] = security_row;
                 $("#securities-tbody").append(security_row);
             }
             
             for(key in security){
-              if(key != "price_series" || key != "volume_series" || key != "tablepointer"){
+              if(key != "price_series" && key != "volume_series" && key != "tablepointer"){
                 security_row.find("." + key).html(security[key]);   
               }
             }
 
-            security_row.find(".unrealized_pnl").html(security['value'] - security['paid']);
-            
-            var open_button = order_row.find(".open-order-window").find("button");
-            open_button.click(function(e){ openOrderWindow(security["symbol"]);});    
+            security_row.find(".unrealized_pnl").html((security['value'] - security['paid']));
+              
         }
         
         
         function removeFromSecuritiesTable(security){
-            var security_row_id = "order-row-" + security["symbol"].toString();
+            var security_row_id = "securities-row-" + security["symbol"].toString();
             $("#securities-tbody").remove("#" + security_row_id);
         }
+        
+        
+        function setMoney(val){
+            _money = val;
+            $("#money-span").html(_money);
+        }
+        
+        function addMoney(val){
+            _money += val;
+            $("#money-span").html(_money);
+        } 
         
         
 	</script>
@@ -354,111 +423,131 @@
   <div id="header"></div>
   <div id="content">
   <br>
-  <span id="form-notification"></span><br> 
+  <span id="form-notification"></span>
   <br>
   
-  <div id="chart-area">
-      
-  </div>
-  
-  <div id="order-entry" class="form-row">
-    <div class="order-entry-col">
-      <label for="orderstock">Stock to Order</label>
-      <input type="text" id="orderstock"/> <br>
-
-      <label for="ordernumber">Number to Order</label>
-      <input type="text" id="ordernumber"/> <br>
-
-      <label for="orderprice">Price to Pay</label>
-      <input type="text" id="orderprice"/> <br>
-
-      <select id="BuySell" size="2">
-        <option selected="selected" value="0">Buy</option>
-        <option value="1">Sell</option>
-      </select>
-      
-      <select id="OrderType" size="2">
-        <option selected="selected" value="0">Market Order</option>
-        <option value="1">Limit Order</option>
-      </select>
-      
-      <button type="button" onclick="sendOrder();" >Send Order</button>
-      
+  <div id="order-entry" class="form-col">
+    <div class="form-row">
+        Username: <span id="username-span"></span>
+        <br>
+        Money: <span id="money-span"></span>
     </div>
-    <div class="order-entry-col">
-	
+    <div class="form-row">
+        <div class="order-entry-col">
+          <label for="orderstock">Symbol</label>
+          <select id="ordersymbol">
+              
+          </select> <br>
+
+          <label for="ordernumber">Quantity</label>
+          <input type="text" id="ordernumber"/> <br>
+
+          <label for="orderprice">Price</label>
+          <input type="text" id="orderprice"/> <br>
+
+          <select id="BuySell" size="2">
+            <option selected="selected" value="0">Buy</option>
+            <option value="1">Sell</option>
+          </select>
+
+          <select id="OrderType" size="2">
+            <option selected="selected" value="0">Market Order</option>
+            <option value="1">Limit Order</option>
+          </select>
+
+          <button type="button" onclick="sendOrder();" >Send Order</button>
+        </div>
+     
+        <div class="order-entry-col">
+
+        </div>
     </div>
+      
+    <br>  
+      
+    <div class="form-row">
+        
+        <div class="form-row">
+            <button type="button" onclick="openSocket();" >Open</button>
+            <button type="button" onclick="closeSocket();" >Close</button> <br>
+            <button type="button" onclick="startData();" >Start</button>
+            <button type="button" onclick="stopData();" >Stop</button>
+            
+        </div> <br>
+
+        <div id="chat-area" class="form-row">
+          <label for="messageinput">Message</label>
+          <input type="text" id="messageinput"/>
+          <br>
+          <button type="button" onclick="sendChatMessage();" >Send Message</button>            
+          <button type="button" onclick="clearFeed();" >Clear Feed</button>
+          <br>
+          <!-- Server responses get written here -->
+          <div id="messages" class="form-row"></div>
+        </div>
+        
+    </div>
+      
   </div>
   
   
   <div class="form-row">
       
-      <div class="form-col">
+        <div id="chart-area"> </div> 
+      
+        <br>
+     
         <table id="securities-table">
-            <thead><th>Symbol</th> <th>Order Window</th> <th>Best Bid</th> <th>Best Ask</th> <th>Bid Qty</th> <th>Ask Qty</th> 
-            <th>Position</th> <th>Paid</th> <th>Value</th> <th>Unrealized P&L</th> <th>Total P&L</th> </thead>
+            <thead><th>Symbol</th> <th>Order <br> Window</th> <th>Last</th> <th>Best Bid</th> <th>Best Ask</th> <th>Bid Qty</th> <th>Ask Qty</th> 
+            <th>Position</th> <th>Paid</th> <th>Value</th> <th>Unrealized <br> P&L</th> <th>Total P&L</th> </thead>
             <tbody id="securities-tbody"></tbody>
         </table>
-      </div>
-      
-      
-      <div class="form-col">
+
+        <br>
+
         <table id="current-orders-table">
             <thead><th>OrderID</th> <th>Symbol</th> <th>Side</th> <th>Order Type</th> <th>Price</th> <th>Remaining</th> <th>Filled</th></thead>
             <tbody id="current-orders-tbody"></tbody>
         </table>
-      </div>
+
       
   </div>
   
-  <div class="form-row">
-	<button type="button" onclick="openSocket();" >Open</button>
-	<button type="button" onclick="sendMessage();" >Send Message</button>
-	<button type="button" onclick="closeSocket();" >Close</button> <br>
-	<button type="button" onclick="startData();" >Start</button>
-	<button type="button" onclick="stopData();" >Stop</button>
-        <button type="button" onclick="showHistory();" >See Order History</button>
-        <button type="button" onclick="clearFeed();" >Clear Feed</button>
-  </div>
-  
-  <div id="chat-area">
-    <label for="messageinput">Message</label>
-    <input type="text" id="messageinput"/>
   </div>
     
-<div id="price-box" style="float:left;border:1;">
-</div>
-<br>
-<!-- Server responses get written here -->
-<div id="messages"></div>
 
-</div>
  
  
   
-<div id="templates" style="visible:hidden;">
+<div id="templates" style="display:none;">
     
-        <tr class="current-orders-row">
-            <td class="orderID"></td>
-            <td class="symbol"></td>
-            <td class="side"></td>
-            <td class="order_type"></td>
-            <td class="price"></td>
-            <td class="remaining"></td>
-            <td class="filled"></td>
-            <td class="order-cancel">
-                <button type="button">Cancel Order</button>
-            </td>
-        </tr>
+    <table>
+        <tbody>
+            <tr class="current-orders-row">
+                <td class="orderID"></td>
+                <td class="symbol"></td>
+                <td class="side"></td>
+                <td class="order_type"></td>
+                <td class="price"></td>
+                <td class="remaining"></td>
+                <td class="filled"></td>
+                <td class="order-cancel">
+                    <button type="button">Cancel Order</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
         
+    <table>
+        <tbody>
         <tr class="securities-row">
             <td class="symbol"></td>
             <td class="open-order-window">
                 <button type="button">Open</button>
             </td>
+            <td class="last_price"></td>
             <td class="bid_price"></td>
             <td class="ask_price"></td>
-            <td class="last_price"></td>
             <td class="bid_qty"></td>
             <td class="ask_qty"></td>
             <td class="position"></td>
@@ -467,6 +556,8 @@
             <td class="unrealized_pnl"></td>
             <td class="total_pnl"></td>
         </tr>
+      </tbody>
+    </table>
     
 </div>  
   

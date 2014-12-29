@@ -81,7 +81,7 @@ public class exchange_simple extends Exchange {
             if(securityExists(symbol)){
                 Security sec = securityMap.get(symbol);
                 HashMap<String, String> result = new HashMap<String, String>();
-                result.put("type", "snapshot");
+                result.put("message_type", "snapshot");
                 result.put("symbol", symbol);
                 result.put("bid_price", Long.toString(sec.bid_price));
                 result.put("ask_price", Long.toString(sec.ask_price));
@@ -100,7 +100,7 @@ public class exchange_simple extends Exchange {
         {
             HashMap<String, String> result = new HashMap<String, String>();
             if(!securityExists(sym)){
-                result.put("type", "order");
+                result.put("message_type", "order");
                 result.put("orderID", Long.toString(orderID));
                 result.put("action", "3");
                 result.put("filled", "0");
@@ -128,7 +128,7 @@ public class exchange_simple extends Exchange {
 
                 String money = Long.toString(-1*fill_qty*fill_price);
                 
-                result.put("type", "order");
+                result.put("message_type", "order");
                 result.put("orderID", Long.toString(orderID));
                 result.put("action", action);
                 result.put("filled", Long.toString(fill_qty));
@@ -143,7 +143,7 @@ public class exchange_simple extends Exchange {
         
         public HashMap<String, String> cancelOrder(String userID, long orderID){
             HashMap<String, String> result = new HashMap<String, String>();
-            result.put("type", "cancel");
+            result.put("message_type", "cancel");
             result.put("orderID", Long.toString(orderID));
             result.put("success", "0");
             return result;
@@ -158,14 +158,13 @@ public class exchange_simple extends Exchange {
                 check if user already exists
                 if already exists:
                     -send series of messages of all active orders
-                    -return new_user message with appropriate userID and money
+                    -return new_user message with appropriate money
                 if new user:
                     -add user to list of active users, make structure
                     -return new_user message with appropriate userID and money
             */
             HashMap<String, String> resp = new HashMap<String, String>();
-            resp.put("type", "new_user");
-            resp.put("userID", userID);
+            resp.put("message_type", "new_user");
             resp.put("money", "0");
             return resp;
         }
@@ -180,7 +179,7 @@ public class exchange_simple extends Exchange {
         
         
         private String getActionString(long fill_qty, long amount){
-            if(fill_qty == amount){
+            if(Math.abs(fill_qty) == amount){
                 return "0";
             } else if (Math.abs(fill_qty) > 0){
                 return "1";
