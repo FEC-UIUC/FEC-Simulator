@@ -2,7 +2,8 @@
 <head>
 <title>Financial Engineering Club at Illinois | FEC | Home</title>
 <link href='http://fonts.googleapis.com/css?family=Roboto+Slab:400,300,700,100' rel='stylesheet' type='text/css'>
-<link href='http://fec.ec.illinois.edu/main/css/style.css' rel='stylesheet' type='text/css'>
+<!-- <link href='http://fec.ec.illinois.edu/main/css/style.css' rel='stylesheet' type='text/css'> -->
+<link href='css/include/jquery.dataTables.min.css' rel='stylesheet' type='text/css'>
 <style>
     .order-entry-col{
         float: left;
@@ -16,22 +17,23 @@
         float: left;
         top: 0pt;
     }
+    
+    table {
+        font-size:70%; 
+        table-layout: fixed;
+        text-align: center;
+    }
 </style>
 <!--<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
 <script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script> -->
 <script src="js/include/jquery-1.11.2.min.js"></script>
 <script src="js/include/jquery-migrate-1.2.1.min.js"></script>
+<script src="js/include/jquery.dataTables.min.js"></script>
 <script src="http://code.highcharts.com/stock/highstock.js"></script>
 <script src="http://code.highcharts.com/stock/modules/exporting.js"></script>
 <script src="js/security_chart.js"></script>
 <script>
-        $(function(){
-            $('#header').load("http://fec.ec.illinois.edu/header.php");
-            messages = document.getElementById("messages");
-            //makeChart();
-            openSocket();
-            sendNewUser();
-        });
+        
 
         var CHAT_WINDOW_CHAR_LENGTH = 37;
         
@@ -43,6 +45,15 @@
         
         var securities = {};
         var orders = {};
+        
+        $(function(){
+            $('#header').load("http://fec.ec.illinois.edu/header.php");
+            messages = document.getElementById("messages");
+            openSocket();
+            makeChart();
+            //$("#securities-table").DataTable();
+            //$("#current-orders-table").DataTable();
+        });
 
         function openSocket(){
             if(webSocket !== undefined && webSocket.readyState !== WebSocket.CLOSED){
@@ -53,9 +64,10 @@
             webSocket = new WebSocket("ws://localhost:8080/Simulator/server");
 
             webSocket.onopen = function(event){
+                    sendNewUser();
                     if(event.data === undefined)
                             return;
-                    writeResponse(event.data);
+                    writeResponse(event.data);       
             };
 
             webSocket.onmessage = messageHandler;
@@ -63,6 +75,8 @@
             webSocket.onclose = function(event){
                 writeResponse("Connection closed");
             };
+            
+            
             
             //TODO - send new_user and handle new_user response
             
@@ -171,12 +185,14 @@
 
 
         function sendOrder(symbol){
-            var quantity = document.getElementById("ordernumber").value;
-            var price = document.getElementById("orderprice").value*100;
-            var a = document.getElementById("BuySell");
-            var BS = a.options[a.selectedIndex].value;
-            var order_types = document.getElementById("OrderType");
-            var order_type = order_types.options[order_types.selectedIndex].value;
+            var security = securities[symbol];
+            var security_row = security["tablepointer"];
+            var quantity = security_row.find(".quantity").find("input").val();
+            var price = Math.round(security_row.find(".price").find("input").val()*100);
+            var side_input = security_row.find(".side").find("select");
+            var BS = side_input[0].options[side_input[0].selectedIndex].value;
+            var order_type_input = security_row.find(".order-type").find("select");
+            var order_type = order_type_input[0].options[order_type_input[0].selectedIndex].value;
             var orderID = next_orderID;
             var message = {
                 "message_type" : "order",
@@ -383,8 +399,8 @@
             if (security_row == null) {
                 security_row = $("#templates").find(".securities-row").clone();
                 security_row.attr("id", "security-row-" + security["symbol"]); 
-                var open_button = security_row.find(".open-order-window").find("button");
-                open_button.click(function(e){ sendOrder(security["symbol"]);});  
+                var order_button = security_row.find(".order").find("button");
+                order_button.click(function(e){ sendOrder(security["symbol"]);});  
                 security["tablepointer"] = security_row;
                 $("#securities-tbody").append(security_row);
             }
@@ -433,6 +449,7 @@
         Money: <span id="money-span"></span>
     </div>
     <div class="form-row">
+        <!--
         <div class="order-entry-col">
           <label for="orderstock">Symbol</label>
           <select id="ordersymbol">
@@ -457,6 +474,7 @@
 
           <button type="button" onclick="sendOrder();" >Send Order</button>
         </div>
+        -->
      
         <div class="order-entry-col">
 
@@ -497,15 +515,15 @@
       
         <br>
      
-        <table id="securities-table">
-            <thead><th>Symbol</th> <th>Order <br> Window</th> <th>Last</th> <th>Best Bid</th> <th>Best Ask</th> <th>Bid Qty</th> <th>Ask Qty</th> 
+        <table id="securities-table" class="display" style="font-size:70%; table-layout: fixed;" cellspacing="3">
+            <thead><th>Symbol</th> <th>Order</th> <th> Quantity </th> <th>Price</th> <th>Side</th> <th>Order <br> Type</th> <th>Last</th> <th>Best Bid</th> <th>Best Ask</th> <th>Bid Qty</th> <th>Ask Qty</th> 
             <th>Position</th> <th>Paid</th> <th>Value</th> <th>Unrealized <br> P&L</th> <th>Total P&L</th> </thead>
             <tbody id="securities-tbody"></tbody>
         </table>
 
         <br>
 
-        <table id="current-orders-table">
+        <table id="current-orders-table" class="display" style="font-size:70%; table-layout: fixed;" cellspacing="3">
             <thead><th>OrderID</th> <th>Symbol</th> <th>Side</th> <th>Order Type</th> <th>Price</th> <th>Remaining</th> <th>Filled</th></thead>
             <tbody id="current-orders-tbody"></tbody>
         </table>
@@ -542,8 +560,26 @@
         <tbody>
         <tr class="securities-row">
             <td class="symbol"></td>
-            <td class="open-order-window">
-                <button type="button">Open</button>
+            <td class="order">
+                <button type="button">Order</button>
+            </td>
+            <td class="quantity">
+                <input type="number" style="width:90;"/>
+            </td>
+            <td class="price"  >
+                <input type="number" style="width:90;"/>
+            </td>
+            <td class="side">
+                <select id="side" size="1">
+                    <option selected="selected" value="0">Buy</option>
+                    <option value="1">Sell</option>
+                </select>
+            </td>
+            <td class="order-type">
+                <select id="order-type" size="1">
+                    <option selected="selected" value="0">Market</option>
+                    <option value="1">Limit</option>
+                </select>
             </td>
             <td class="last_price"></td>
             <td class="bid_price"></td>
