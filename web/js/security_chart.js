@@ -38,7 +38,7 @@ function makeChart() {
                     x: -3
                 },
                 title: {
-                    text: 'Bid/Ask Spread'
+                    text: 'OHLC'
                 },
                 height: '60%',
                 lineWidth: 2
@@ -55,11 +55,16 @@ function makeChart() {
                 offset: 0,
                 lineWidth: 2
         }],
+    
+        xAxis : {
+            max: 100,
+            min: 100
+        },
             
         series : [{
             name : 'OHLC',
-            type : 'ohlc',
-            data : [],
+            type : 'candlestick',
+            data : [[1,100,100,100,100]],
             yAxis: 0
         },{
             type: 'column',
