@@ -1,7 +1,5 @@
 package Simulator;
 
-import java.util.HashMap;
-import java.util.Map;
 
 
 /**
@@ -9,15 +7,6 @@ import java.util.Map;
  * @author Thibaut Xiong
  */
 
-/***
-
-order|userID|sym|price|qty|side|type|orderID
-
-Note: 
-side (0 - buying, 1 - selling)
-type (0 - market order, 1 - limit order)|
-
-***/
 
 public class Order{
 
