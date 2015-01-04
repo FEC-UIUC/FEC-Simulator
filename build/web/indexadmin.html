@@ -1,238 +1,283 @@
-<!DOCTYPE html>
-<!--
-To change this license header, choose License Headers in Project Properties.
-To change this template file, choose Tools | Templates
-and open the template in the editor.
--->
 <html>
-    <head>
-	<title>Financial Engineering Club at Illinois | FEC | Home</title>
-	<link href='http://fonts.googleapis.com/css?family=Roboto+Slab:400,300,700,100' rel='stylesheet' type='text/css'>
-        <link href='http://fec.ec.illinois.edu/main/css/style.css' rel='stylesheet' type='text/css'>
-	<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
-        <script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
-	<script src="http://code.highcharts.com/stock/highstock.js"></script>
-        <script src="http://code.highcharts.com/stock/modules/exporting.js"></script>
-	<script src="js/chart.js"></script>
-        <script>
+<head>
+<title>Financial Engineering Club at Illinois | FEC | Home</title>
+<link href='http://fonts.googleapis.com/css?family=Roboto+Slab:400,300,700,100' rel='stylesheet' type='text/css'>
+<!-- <link href='http://fec.ec.illinois.edu/main/css/style.css' rel='stylesheet' type='text/css'> -->
+<link href='css/include/jquery.dataTables.min.css' rel='stylesheet' type='text/css'>
+<style>
+    .order-entry-col{
+        float: left;
+    }
+    
+    .form-row {
+        clear: left;
+    }
+    
+    .form-col {
+        float: left;
+        top: 0pt;
+        height: 100%;
+    }
+    
+    table {
+        font-size:70%; 
+        table-layout: fixed;
+        text-align: center;
+    }
+    
+    .scroll-y-area{
+        overflow-y: scroll;
+    }
+    
+    .cell-button{
+        font-size:70%;
+    }
+    
+</style>
+<!--<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script> -->
+<script src="js/include/jquery-1.11.2.min.js"></script>
+<script src="js/include/jquery-migrate-1.2.1.min.js"></script>
+<script src="js/include/jquery.dataTables.min.js"></script>
+<script src="js/include/highstock.js"></script>
+<script src="js/include/modules/exporting.js"></script>
+
+<script src="js/security_chart.js"></script>
+<script src="js/algorithms.js"></script>
+<script src="js/controls.js"></script>
+<script src="js/feed.js"></script>
+<script src="js/receiving.js"></script>
+<script src="js/sending.js"></script>
+<script src="js/ui_updating.js"></script>
+<script src="js/websocket.js"></script>
+
+<script>
+        
+        var CHAT_WINDOW_CHAR_LENGTH = 40;
+        
+        var messages;
+        
+        var username = "rickjames123";
+        var _money = 0;
+        
+        var next_orderID = 1;
+        var next_algorithm_id = 1;
+        
+        var securities = {};
+        var orders = {};
+        var algorithms = {};
+        
+        var validAlgorithmExtensions = ["py", "pyx"];
+        
+        var chart_security = "GOOG";
+        
         $(function(){
             $('#header').load("http://fec.ec.illinois.edu/header.php");
             messages = document.getElementById("messages");
+            openSocket();
             makeChart();
+            //$("#securities-table").DataTable();
+            //$("#current-orders-table").DataTable();
         });
-        
-        var webSocket;
-        var messages;
-        var username = "rickjames123";
-        var orderID = 1;
-        var orderHistory = {};
-        
-        var securities = {};
-
-        function openSocket(){
-            if(webSocket !== undefined && webSocket.readyState !== WebSocket.CLOSED){
-               writeResponse("WebSocket is already opened.");
-               return;
-            }
-
-            webSocket = new WebSocket("ws://localhost:8080/Simulator/server");
-
-            webSocket.onopen = function(event){
-                    if(event.data === undefined)
-                            return;
-                    writeResponse(event.data);
-            };
-
-            webSocket.onmessage = messageHandler;
-
-            webSocket.onclose = function(event){
-                writeResponse("Connection closed");
-            };
-        }
-        
-        function messageHandler(event){
-            msg = parseMessage(event.data);
-            if(msg['type'] === 'message'){
-               m = "<b>" + msg['from'] + ":</b> " + msg['message']; 
-               writeResponse(m);
-            } else if (msg['type'] === 'order'){
-                handleOrder(msg);
-            } else if (msg['type'] ==='cancel'){
-                handleCancel(msg);
-            } else if (msg['type'] ==='snapshot'){
-                handleSnapshot(msg);
-            } else if (msg['type'] === 'data') {
-               var series = stockchart.series[0];
-               var x = (new Date()).getTime()
-               var y = $.parseJSON(msg[1]);
-               if(y !== null){
-                 series.addPoint([x,y], true, true);
-               }
-               $("#price-box").html(y.toString());
-            }
-        }
-        
-        function parseMessage(message_string) {
-            var message = {};
-            var pairs = message_string.split("|");
-            for(var i=0; i < pairs.length; i++){
-                var key_val = pairs[i].split("=", 2);
-                message[key_val[0]] = key_val[1];
-            }
-            return message;
-        }
-        
-        function formatMessage(message_map) {
-            var message_string = "";
-            for(var key in message_map){
-                message_string += key + "=" + message_map[key] + "|";
-            }
-            return message_string.slice(0, -1);
-        }
-
-        function startData(){
-           webSocket.send("type=admin|command=start");
-        }
-
-        function stopData(){
-           webSocket.send("type=admin|command=stop");
-        }
-
-        function sendMessage(){
-                var message_text = document.getElementById("messageinput").value;
-                msg = {
-                    "type" : "message",
-                    "from" : username,
-                    "message" : message_text
-                }
-                webSocket.send(formatMessage(msg));
-        }
-
-        function closeSocket(){
-                webSocket.close();
-        }
-
-        function writeResponse(text){
-                messages.innerHTML += "<br/>" + text;
-        }
-
-        function clearFeed(){
-            messages.innerHTML = "<br/>" 
-        }
-
-        function handleOrder(msg){
-            //UPDATED FORM order|orderID|action|filled|remaining|money
-            var change = "";
-            var order = orderHistory[msg["orderID"]].split("|");
-            if(msg["action"] === 0){
-                writeResponse("Order " + msg["orderID"] + "was filled for " + msg["money"]/100);
-                change = "Filled";
-            } else if(msg["action"] === 1){
-                writeResponse("Order " + msg["orderID"] + "was partially filled for " + msg["money"]/100 + " and has " + msg["remaining"] + " remaining");
-                change = "Partial Fill";
-                order[4] = msg["remaining"];
-            } else if(msg["action"] === 2){
-                writeResponse("Order " + msg["orderID"] + "was successfully placed");
-                change = "Placed";
-            } else if(msg["action"] === 3){
-                writeResponse("Order " + msg["orderID"] + "was successfully canceled");
-                change = "Canceled";
-            }
-            order[8] = change;
-            //orderHistory[msg["orderID"]] = (order[0] + "|" + order[1] + "|" + order[2] + "|" + order[3] + "|" + order[4] + "|" + order[5] + "|" + order[6] + "|" + order[7] + "|" + order[8]);
-        }
-
-        function sendCancel(){
-            var orderID = document.getElementByID("cancelOrder").value;
-            if(orderID !== ""){
-                writeResponse("Sending cancel order for " + orderID);
-                msg = {
-                    "type" : "cancel",
-                    "orderID" : orderID
-                }
-                writeResponse(formatMessage(msg));
-            }
-        }
-        
-        function handleCancel(msg){
-            if(msg["success"] == 0){
-                writeResponse("Cancel Failed on order " + msg["orderID"]);
-            } else if(msg["success"] == 1){
-                writeResponse("Cancel Success on order " + msg["orderID"]);
-            }
-
-        }
-
-        function handleSnapshot(msg){
-            var series = stockchart.series[0];
-            var x = (new Date()).getTime()
-            var y = $.parseJSON(msg[1]);
-            var bid_price = parseInt(msg['bid_price']);
-            var ask_price = parseInt(msg['ask_price']);
-            var bid_qty = parseInt(msg['bid_qty']);
-            var ask_qty = parseInt(msg['ask_qty']);
-            var open_price = (bid_price+ask_price)/2;
-            var close_price = (bid_price+ask_price)/2;
-            var bar = [open_price, ask_price, bid_price, close_price];
-            stockchart.series[0].addPoint([x,bar], true, true);
-            stockchart.series[1].addPoint([x,msg['bid_qty']], true, true);
-            stockchart.series[2].addPoint([x,msg['ask_qty']], true, true);
-            $("#price-box").html(y.toString());
-            writeResponse(msg["symbol"] + " Bid: " + msg["bid_price"] + "Quantity: " + msg["bid_qty"] + "Ask: " + msg["ask_price"] + "Quantity: " + msg["ask_qty"]);
-        }
-
-        function showHistory(){
-            for(j=1; j<orderID; j++){
-                var order = orderHistory[j].split("|");
-                var BuySell;
-                var Type;
-
-                if(order[5] == 0){
-                    BuySell = "Buy";
-                } else if(order[5] == 1) {
-                    BuySell = "Sell";
-                }
-                if(order[6] == 1){
-                    Type = "Market Order";
-                } else if(order[6] == 0){
-                    Type = "Limit Order";
-                }
-                writeResponse("Order ID: " + order[7] + ", " + BuySell + ", " + Type + ", Stock: " + order[2] + " Price: $" + order[3]/100 + " Quantity: " + order[4] + " Status: " + order[8]);
-
-            }
-        }
-        function sendOrder(){
-            var symbol = document.getElementById("orderstock").value;
-            var quantity = document.getElementById("ordernumber").value;
-            var price = document.getElementById("orderprice").value*100;
-            var a = document.getElementById("BuySell");
-            var BS = a.options[a.selectedIndex].value;
-            var order_types = document.getElementById("OrderType");
-            var order_type = order_types.options[order_types.selectedIndex].value;
-            var order = "order|" + username + "|" + stock + "|" + price + "|" + quantity + "|" + BS + "|" + Type + "|" + orderID;
-            var order = {
-                "type" : "order",
-                "symbol" : symbol,
-                "price" : price,
-                "amount" : quantity,
-                "order_type" : order_type,
-                "orderID" : orderID
-            }
-            if(price >= 1 && quantity % 1 == 0  && stock !== ""){
-                webSocket.send(formatMessage(order));
-                //orderHistory[orderID] = formatMessage(order) + "|Pending";
-            } else {
-                writeResponse("Invalid Parameters for Order");
-            }
-            orderID = orderID + 1;
-        }
-            
-        </script>
-		
-    </head>
-    <body>
+       
+	</script>
+</head>
+<body>
+  <div id="header"></div>
+  <div id="content">
+  
+  <div class="form-col" style="width:16%;height:100%;">
+    <div class="form-row" style="height:10%;">
+        Username: <span id="username-span"></span>
         <br>
-<!-- Server responses get written here -->
-<div id="messages"></div>
-    </body>
+        Money: <span id="money-span"></span>
+    </div>
+   
+      
+    <div class="form-row" style="height:90%;">
+        
+        <div class="form-row" style="height:10%;">
+            <button type="button" onclick="openSocket();" >Open</button>
+            <button type="button" onclick="closeSocket();" >Close</button> <br>
+            <button type="button" onclick="startData();" >Start</button>
+            <button type="button" onclick="stopData();" >Stop</button>
+            
+        </div>
+
+        <div id="chat-area" class="form-row" style="height:90%;">
+          <label for="messageinput">Message</label>
+          <input type="text" id="messageinput"/>
+          <br>
+          <button type="button" onclick="sendChatMessage();" >Send Message</button>            
+          <button type="button" onclick="clearFeed();" >Clear Feed</button>
+          <br>
+          <!-- Server responses get written here -->
+          <div id="messages" class="scroll-y-area" style="height:90%;"></div>
+        </div>
+        
+    </div>
+      
+  </div>
+  
+  
+  <div class="form-col" style="width:84%;">
+     
+        <div class="form-row" style="height:35%;">
+            <div class="scroll-y-area" style="width:64%;float:left;">
+                <table id="securities-table" class="display" style="margin-left:auto;margin-right:auto;font-size:70%; table-layout: fixed;" cellspacing="3">
+                    <thead><th>Symbol</th> <th>Order</th> <th> Quantity </th> <th>Price</th> <th>Side</th> <th>Order <br> Type</th> <th>Last</th> <th>Best Bid</th> <th>Best Ask</th> <th>Bid Qty</th> <th>Ask Qty</th> 
+                    <th>Position</th> <th>Value</th> <th>Total P&L</th> </thead>
+                    <tbody id="securities-tbody"></tbody>
+                </table>
+            </div>
+            
+            <div class="form-col" style="width:35%; padding-left: 1%; float:left; ">
+
+              <label for="algorithm-name">Name</label>
+              <input type="text" id="algorithm-name"/> &nbsp;
+              <input type="file" id="algorithm-browse" name="Browse" /> <br>
+              <button type="button" id="algorithm-upload" name="Upload" onclick="addAlgorithm();">Upload Algorithm</button>
+
+              <br>
+
+              <div class="scroll-y-area" style="margin-left:auto;margin-right:auto;height:60%;">
+                  <table id="algorithms-table" class="display" style="margin-left:auto;margin-right:auto; float:left; font-size:70%; table-layout: fixed; border: solid black;" cellspacing="4">
+                      <thead> <th>Id</th> <th>Name</th> <th>Securities</th> <th>Parameters</th> <th>Status</th> <th>Run</th> <th>Stop</th> <th>Remove</th> <th>P&L</th> <th>Log</th></thead>
+                      <tbody id="algorithms-tbody"></tbody>
+                  </table>
+              </div>
+
+            </div>
+            
+        </div>
+
+        
+      
+        <div class="form-row" style="height:65%;">
+        
+            <div class="form-col" style="width:32%;">
+                <div class="scroll-y-area" style="padding-left:2%; margin-left:auto;margin-right:auto;height:52%;">
+                    <table id="current-orders-table" class="display" style="float:left; font-size:70%; table-layout: fixed; border: solid black;" cellspacing="3">
+                        <thead><th>OrderID</th> <th>Symbol</th> <th>Side</th> <th>Order Type</th> <th>Price</th> <th>Remaining</th> <th>Filled</th></thead>
+                        <tbody id="current-orders-tbody"></tbody>
+                    </table>
+                </div>
+
+                <br>
+
+                <div class="scroll-y-area" style="padding-left:2%; margin-left:auto;margin-right:auto;height:40%;">
+                    <table id="past-orders-table" class="display" style="float:left; font-size:70%; table-layout: fixed; border: solid black;" cellspacing="3">
+                        <thead><th>OrderID</th> <th>Symbol</th> <th>Side</th> <th>Order Type</th> <th>Price</th> <th>Remaining</th> <th>Filled</th></thead>
+                        <tbody id="past-orders-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="scroll-y-area" style="padding-left:1%; height:100%;width:67%;float:left;">
+                <div id="chart-area" style="height:90%;width:95%;"> </div> 
+            </div>
+        
+        </div>
+       
+      
+  </div>
+     
+
+  
+      
+      
+  </div>
+    
+
+ 
+ 
+  
+<div id="templates" style="display:none;">
+    
+    <table>
+        <tbody>
+            <tr class="current-orders-row">
+                <td class="orderID"></td>
+                <td class="symbol"></td>
+                <td class="side"></td>
+                <td class="order_type"></td>
+                <td class="price"></td>
+                <td class="remaining"></td>
+                <td class="filled"></td>
+                <td class="cancel-order">
+                    <button type="button">Cancel</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+        
+    <table>
+        <tbody>
+        <tr class="securities-row">
+            <td class="symbol"></td>
+            <td class="order">
+                <button type="button">Order</button>
+            </td>
+            <td class="quantity">
+                <input type="number" style="width:90;"/>
+            </td>
+            <td class="price"  >
+                <input type="number" style="width:90;"/>
+            </td>
+            <td class="side">
+                <select id="side" size="1">
+                    <option selected="selected" value="0">Buy</option>
+                    <option value="1">Sell</option>
+                </select>
+            </td>
+            <td class="order-type">
+                <select id="order-type" size="1">
+                    <option value="0">Market</option>
+                    <option selected="selected" value="1">Limit</option>
+                </select>
+            </td>
+            <td class="last_price"></td>
+            <td class="bid_price"></td>
+            <td class="ask_price"></td>
+            <td class="bid_qty"></td>
+            <td class="ask_qty"></td>
+            <td class="position"></td>
+            <td class="value"></td>
+            <td class="total_pnl"></td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <table>
+        <tbody>
+            <tr class="algorithms-row">
+                <td class="id"></td>
+                <td class="name"></td>
+                <td class="securities">
+                    <button class="cell-button" type="button" style="font-size:50%;">Edit</button>
+                </td>
+                <td class="parameters">
+                    <button class="cell-button" type="button" style="font-size:50%;">Edit</button>
+                </td>
+                <td class="status"></td>
+                <td class="run">
+                    <button class="cell-button" type="button" style="font-size:50%;">Run</button>
+                </td>
+                <td class="stop">
+                    <button class="cell-button" type="button" style="font-size:50%;">Stop</button>
+                </td>
+                <td class="remove">
+                    <button class="cell-button" type="button" style="font-size:50%;">Rem</button>
+                </td>
+                <td class="PnL"></td>
+                <td class="Log">
+                    <a href="" download>Log</a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    
+</div>  
+  
+</body>
 </html>
