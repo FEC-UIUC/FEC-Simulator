@@ -1,5 +1,7 @@
 package Simulator;
 import java.util.ArrayList;
+import java.util.TreeMap;
+import java.util.LinkedList;
 
 /**
  * Orderbook for one security
@@ -7,11 +9,11 @@ import java.util.ArrayList;
  */
 
 public class OrderBook{
-	final String sym;                                         // symbol
-        long askMin = 50000;                                         // minimum ask price
-        long bidMax = 0;                                         // maximum bid price
-        int currOrderID = 0;                                   // monotonically-increasing orderID
-        pricePoint[] pricePoints = new pricePoint[50001];   // max $500, index represents cents
+	final String sym;                                            // symbol
+        long askMin = 1000;                                         // minimum ask price
+        long bidMax = 0;                                            // maximum bid price
+        int currOrderID = 0;                                       // monotonically-increasing orderID
+        TreeMap<Long, LinkedList<orderBookEntry>> pricePoints;
         
 	public OrderBook(String sym){
             this.sym = sym;
@@ -21,15 +23,20 @@ public class OrderBook{
 		return sym;
 	}
         
-        // Insert a limit order/new orderbook entry at the tail of the price point list
-        public void insertOrder(pricePoint price, orderBookEntry order){
-            if(price.listHead != null){
-                price.listTail.next = order;
+        // Insert a limit order into the book
+        public void insertOrder(long price, orderBookEntry order){
+            // orders at price exist, add to end of queue
+            if(pricePoints.containsKey(price)){
+                LinkedList<orderBookEntry> entries = pricePoints.get(price);
+                entries.add(order);
             }
+            // no orders at price exist, create a new queue
             else{
-                price.listHead = order;
+                LinkedList<orderBookEntry> entries = new LinkedList();
+                entries.add(order);
+                pricePoints.put(price, entries);
             }
-            price.listTail = order;
+
         }
        
        // executes a trade and modifies the orderbook accordingly
@@ -43,79 +50,117 @@ public class OrderBook{
         // Order(String userID, String sym, long price, long qty, int side, int order_type)
        public int limitOrder(Order order){
            String userID = order.getUserID();
-           long price = order.getPrice()*100; // price in cents
+           long price = order.getPrice(); 
            long qty = order.getQty();
            int side = order.getSide();
-           orderBookEntry entry;
-           int priceIndex = (int)askMin*100;
            // buy order
            if(side == 0){ 
-               pricePoint pp = pricePoints[priceIndex]; // the pricepoint to begin wtih
-               // there are orders that can be filled
+               LinkedList<orderBookEntry> entries = pricePoints.get(askMin);
+               orderBookEntry entry = entries.peekFirst(); // first order at askMin price
+               // try to fill orders
                if(price >= askMin){
                    do{
-                       entry = pp.listHead;
                        while(entry != null){
                            // exhaust the current entry, need more to fill order
-                           if(entry.qty < qty){
+                           if(entry.getQty() < qty){
                                // report the trade
                                System.out.println("Bought");
-                               qty -= entry.qty;  // filled some
-                               entry = entry.next;
+                               qty -= entry.getQty();  // filled some
+                               entries.pop(); // filled up the first order, remove it from linked list
+                               entry = entries.peekFirst();
+                               
                            }
                            // whole order can be filled by current entry
                            else{
                                // report the trade
-                               if(entry.qty > qty){
-                                   entry.qty -= qty;
-                               }
-                               else{
-                                   entry = entry.next;
-                               }
-                               // successfully filled the order in ful
-                               pp.listHead = entry;
+                               System.out.println("Bought");
+                                entry.subtractQty(qty);
+
+                               // successfully filled the order in full
                                currOrderID += 1;
+                               System.out.println("Filled order " + currOrderID);
                                return currOrderID;
                            }
                           
                        }
-                       
-                       pp.listHead = null;
-                       priceIndex += 1;
-                       pp = pricePoints[priceIndex];
-                       askMin += 1;
+                       // exhausted all entries at current price, try next price
+                       pricePoints.remove(askMin);
+                       askMin = pricePoints.higherKey(askMin);
+                       entries = pricePoints.get(askMin); 
+                       entry = entries.peekFirst();
                    }while(price >= askMin);
                } 
-            // if the order was not filled in full
-               entry = new orderBookEntry(qty, userID); // nsert it as a bid limit order - it's remaining qty is now the best bid
-               entry.qty = qty;
-               insertOrder(pricePoints[(int)price], entry);
+               // order was not filled or partially filled
+               entry = new orderBookEntry(qty, userID); // insert as a bid- it's remaining qty is now the best bid
+               insertOrder(price, entry);
                if(bidMax < price){  // update the bidMax
                    bidMax = price;
                }
-          }
+               System.out.println("Order partially filled");
+           }
+           // sell limit order
+           else{
+               LinkedList<orderBookEntry> entries = pricePoints.get(bidMax);
+               orderBookEntry entry = entries.peekFirst();
+               // try to fill orders
+               if(price >= bidMax){
+                   do{
+                       while(entry != null){
+                           // exhaust the current entry, need more to fill order
+                           if(entry.getQty() < qty){
+                               // report the trade
+                               System.out.println("Sold");
+                               qty -= entry.getQty();
+                               entries.pop();
+                               entry = entries.peekFirst();
+                           }
+                           // whole order can be filled by current entry
+                           else{
+                               // report the trade
+                               System.out.println("Sold");
+                               entry.subtractQty(qty);
+                               
+                               // successfully filled the order in full
+                               currOrderID += 1;
+                               System.out.println("Filled order " + currOrderID);
+                               return currOrderID;
+                           }
+                       }
+                       // exhausted all entries at current price, try next price
+                       pricePoints.remove(bidMax);
+                       bidMax = pricePoints.lowerKey(bidMax);
+                       entries = pricePoints.get(bidMax);
+                       entry = entries.peekFirst();
+                   }while(price <= bidMax);
+               }
+               
+           }
            return currOrderID;
        }
         
         // A single orderBookEntry (limit order)
         public class orderBookEntry{
             long qty;               // order qty
-            orderBookEntry next;    // next entry in the pricePoint list
             String userID;          // the user that placed the order
             public orderBookEntry(long qty, String userID){
                 this.qty = qty;
                 this.userID = userID;
-                this.next = null;
             }
-        }
-        
-        // A single pricepoint in the orderbook
-        public class pricePoint{
-            orderBookEntry listHead;
-            orderBookEntry listTail;
-            public pricePoint(){
-                this.listHead = null;
-                this.listTail = null;
+            
+            public long getQty(){
+                return qty;
+            }
+            
+            public void setQty(long qty){
+                this.qty = qty;
+            }
+            
+            public void addQty(long qty){
+                this.qty += qty;
+            }
+            
+            public void subtractQty(long qty){
+                this.qty -= qty;
             }
         }
 
