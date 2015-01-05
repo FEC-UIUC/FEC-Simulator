@@ -60,7 +60,7 @@ public class OrderBook{
                
             // try to fill orders
             while(!sideBook.isEmpty() && order.getQty() > 0 &&
-                    (order.getPrice()*sidemult >= bestPrice || isMarket)){
+                    (order.getPrice()*sidemult >= bestPrice*sidemult || isMarket)){
                 LinkedList<Order> entries = sideBook.get(bestPrice);
                 fillOrder(order, entries, trades);
                 if(entries.isEmpty()){
