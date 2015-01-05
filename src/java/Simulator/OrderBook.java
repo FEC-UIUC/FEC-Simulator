@@ -35,6 +35,7 @@ public class OrderBook{
         }
         
         private int handleOrder(Order order){
+            setLiquidity();
             int type = order.getType();
             if(type == 0){
                 marketOrder(order);
@@ -42,7 +43,6 @@ public class OrderBook{
             else{
                 limitOrder(order);
             }
-            setLiquidity();
             return currOrderID;
         }
         
