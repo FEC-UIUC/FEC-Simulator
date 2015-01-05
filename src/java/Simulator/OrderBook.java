@@ -40,43 +40,6 @@ public class OrderBook{
             }
         }
 
-        
-        // Insert a limit order into the book
-        private void insertOrder(Order order){
-            long price = order.getPrice();
-            // orders at price exist, add to end of queue
-            TreeMap<Long, LinkedList<Order>> sideBook = getSideBook(order.getSide());
-            if(sideBook.containsKey(price)){
-                LinkedList<Order> entries = sideBook.get(price);
-                entries.add(order);
-            }
-            // no orders at price exist, create a new queue
-            else{
-                LinkedList<Order> entries = new LinkedList();
-                entries.add(order);
-                sideBook.put(price, entries);
-            }
-        }
-       
-       // executes a trade and modifies the orderbook accordingly
-       private void fillOrder(Order taker, LinkedList<Order> entries, LinkedList<Trade> trades){
-           Order entry = entries.peekFirst(); // first order at bestPrice
-           while(entry != null && taker.getQty() > 0){
-                if(entry.getQty() < taker.getQty()){
-                    //exhaust current order
-                    trades.add(new Trade(entry, taker, entry.getQty()));
-                    taker.setQty(taker.getQty() - entry.getQty());  // filled some
-                    entries.pop(); // filled up the first order, remove it from linked list
-                    entry = entries.peekFirst();
-                }
-                else{
-                    // successfully filled the order in full
-                    trades.add(new Trade(entry, taker, taker.getQty()));
-                    entry.setQty(entry.getQty() - taker.getQty());
-                    taker.setQty(0L);
-                }
-            }
-       }
        
         // Processes an incoming limit order
         // Order(String userID, String sym, long price, long qty, int side, int order_type)
@@ -117,6 +80,44 @@ public class OrderBook{
             }
             
             return trades;
+       }
+       
+       
+       // Insert a limit order into the book
+        private void insertOrder(Order order){
+            long price = order.getPrice();
+            // orders at price exist, add to end of queue
+            TreeMap<Long, LinkedList<Order>> sideBook = getSideBook(order.getSide());
+            if(sideBook.containsKey(price)){
+                LinkedList<Order> entries = sideBook.get(price);
+                entries.add(order);
+            }
+            // no orders at price exist, create a new queue
+            else{
+                LinkedList<Order> entries = new LinkedList();
+                entries.add(order);
+                sideBook.put(price, entries);
+            }
+        }
+       
+       // executes a trade and modifies the orderbook accordingly
+       private void fillOrder(Order taker, LinkedList<Order> entries, LinkedList<Trade> trades){
+           Order entry = entries.peekFirst(); // first order at bestPrice
+           while(entry != null && taker.getQty() > 0){
+                if(entry.getQty() < taker.getQty()){
+                    //exhaust current order
+                    trades.add(new Trade(entry, taker, entry.getQty()));
+                    taker.setQty(taker.getQty() - entry.getQty());  // filled some
+                    entries.pop(); // filled up the first order, remove it from linked list
+                    entry = entries.peekFirst();
+                }
+                else{
+                    // successfully filled the order in full
+                    trades.add(new Trade(entry, taker, taker.getQty()));
+                    entry.setQty(entry.getQty() - taker.getQty());
+                    taker.setQty(0L);
+                }
+            }
        }
         
  
