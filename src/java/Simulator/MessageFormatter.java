@@ -25,6 +25,7 @@ public class MessageFormatter {
         return message_string.substring(0, message_string.length()-1);
     }
     
+    
     public static HashMap<String, String> parse(String message){
         HashMap<String, String> message_map = new HashMap<String, String>();
         String[] pairs = message.split("\\|");
