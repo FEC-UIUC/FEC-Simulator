@@ -1,5 +1,5 @@
 package Simulator;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.TreeMap;
 import java.util.LinkedList;
 
@@ -12,9 +12,9 @@ import java.util.LinkedList;
 
 public class OrderBook{
 	final String sym;                                            // symbol
-        int currOrderID = 0;                                       // monotonically-increasing orderID
         TreeMap<Long, LinkedList<Order>> bids;
         TreeMap<Long, LinkedList<Order>> asks;
+        
         
 	public OrderBook(String sym){
             this.sym = sym;         
@@ -43,10 +43,9 @@ public class OrderBook{
        
         // Processes an incoming limit order
         // Order(String userID, String sym, long price, long qty, int side, int order_type)
-       private LinkedList<Trade> handleOrder(Order order){
+       public LinkedList<Trade> handleOrder(Order order){
            
-           LinkedList<Trade> trades = new LinkedList<Trade>();
-
+           LinkedList<Trade> trades = new LinkedList<>();
            boolean isMarket = (order.getType() == 0);
                    
            //get opposing side book
@@ -119,7 +118,15 @@ public class OrderBook{
                 }
             }
        }
-        
+       
+       public long getTotalQty(long price){
+          long qty = 0;
+          LinkedList<Order> entries = bids.get(price);
+          for(Order order : entries){
+              qty += order.getQty();
+          }
+          return qty;
+       }
  
     private TreeMap<Long, LinkedList<Order>> getSideBook(int side){
         return (side == 0) ? bids : asks;
