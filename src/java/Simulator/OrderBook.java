@@ -17,7 +17,9 @@ public class OrderBook{
         
         
 	public OrderBook(String sym){
-            this.sym = sym;         
+            this.sym = sym;
+            this.bids = new TreeMap<>();
+            this.asks = new TreeMap<>();
 	}
         
         public String getSym(){
@@ -26,7 +28,7 @@ public class OrderBook{
 
         public long bestBid(){
             if(!bids.isEmpty()){
-                return bids.lastKey();
+                return bids.firstKey();
             } else {
                 return Long.MIN_VALUE;
             }
@@ -83,10 +85,11 @@ public class OrderBook{
        
        
        // Insert a limit order into the book
-        private void insertOrder(Order order){
+        public void insertOrder(Order order){
             long price = order.getPrice();
             // orders at price exist, add to end of queue
             TreeMap<Long, LinkedList<Order>> sideBook = getSideBook(order.getSide());
+            //System.out.println(sideBook.keySet().toString());        
             if(sideBook.containsKey(price)){
                 LinkedList<Order> entries = sideBook.get(price);
                 entries.add(order);
@@ -119,6 +122,7 @@ public class OrderBook{
             }
        }
        
+       // gets total volume at a certain price
        public long getTotalQty(long price){
           long qty = 0;
           LinkedList<Order> entries = bids.get(price);
@@ -126,6 +130,24 @@ public class OrderBook{
               qty += order.getQty();
           }
           return qty;
+       }
+       
+        /* 
+        Testing methods
+        */
+       public void printBidBook(){
+           for(Long price : bids.keySet()){
+               String temp = "";
+               for(Order order : bids.get(price)){
+                          temp += " "+ Long.toString(order.getQty());
+               }
+               System.out.println(Long.toString(price) + " " + temp);
+              
+           }
+       }
+       
+       public void printAskBook(){
+           
        }
  
     private TreeMap<Long, LinkedList<Order>> getSideBook(int side){

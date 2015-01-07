@@ -155,7 +155,10 @@ public class ExchangeComplex extends Exchange {
             return null;
         }
     }
-    
+    /* 
+    Testing methods
+    */
+
     public class User {
         String userID;
         List<Order> orders;
