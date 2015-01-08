@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
@@ -96,7 +97,7 @@ public class exchange_simple extends Exchange {
 	}
 	
 
-        public HashMap<String, String> placeOrder(String userID, String sym, long price, long amount, int side, int type, long orderID)
+        public LinkedList<HashMap<String, String>> placeOrder(String userID, String sym, long price, long amount, int side, int type, long orderID)
         {
             HashMap<String, String> result = new HashMap<String, String>();
             if(!securityExists(sym)){
@@ -136,8 +137,9 @@ public class exchange_simple extends Exchange {
                 result.put("money", money);
                 
             }
-            
-            return result;
+            LinkedList<HashMap<String, String>> resp = new LinkedList<>();
+            resp.add(result);
+            return resp;
                     
         }
         

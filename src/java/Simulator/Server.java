@@ -149,7 +149,6 @@ public class Server {
         int side = Integer.parseInt(message_map.get("side"));
         int order_type = Integer.parseInt(message_map.get("order_type"));
         long orderID = Long.parseLong(message_map.get("orderID"));
-        //long orderID, String userID, String sym, long price, long qty, int side, int order_type
         LinkedList<HashMap<String, String>> resps = exchange.placeOrder(orderID, userID, symbol, price, qty, side, order_type);
         return resps;
         //return MessageFormatter.format(resp);
