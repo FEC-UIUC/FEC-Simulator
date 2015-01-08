@@ -104,15 +104,15 @@ public class ExchangeComplex extends Exchange {
     
     public HashMap<String, String> cancelOrder(String userID, long orderID){
         
-           Order orderToCancel = orders.get(orderID);
-           LinkedList<Order> entries = (orderToCancel.getSide() == 0) ? orderbooks.get(orderToCancel).bids.get(orderToCancel.getPrice()) : orderbooks.get(orderToCancel).asks.get(orderToCancel.getPrice());
-           boolean success = entries.remove(orderToCancel);
-           
-            HashMap<String, String> result = new HashMap<>();
-            result.put("message_type", "cancel");
-            result.put("orderID", Long.toString(orderID));
-            result.put("success", success ? "1":"0");
-            return result;
+        Order orderToCancel = orders.get(orderID);
+        LinkedList<Order> entries = (orderToCancel.getSide() == 0) ? orderbooks.get(orderToCancel).bids.get(orderToCancel.getPrice()) : orderbooks.get(orderToCancel).asks.get(orderToCancel.getPrice());
+        boolean success = entries.remove(orderToCancel);
+
+        HashMap<String, String> result = new HashMap<>();
+        result.put("message_type", "cancel");
+        result.put("orderID", Long.toString(orderID));
+        result.put("success", success ? "1":"0");
+        return result;
     }
     
     public long getUserMoney(String userID){
@@ -136,6 +136,15 @@ public class ExchangeComplex extends Exchange {
     }
     
     public HashMap<String, String> addUser(String username, String userID){
+        /* TODO:
+            check if user already exists
+            if already exists:
+                -send series of messages of all active orders
+                -return new_user message with appropriate money
+            if new user:
+                -add user to list of active users, make structure
+                -return new_user message with appropriate userID and money
+        */
         usernames.put(username, userID);
         users.put(userID, new User(userID));
         

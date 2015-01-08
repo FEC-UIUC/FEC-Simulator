@@ -13,7 +13,7 @@ function openSocket(){
             sendNewUser();
             if(event.data === undefined)
                     return;
-            writeResponse(event.data);       
+            writeResponse(event.data);      
     };
 
     webSocket.onmessage = messageHandler;

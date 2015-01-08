@@ -18,7 +18,8 @@ public class Server {
 
     private static DataFeed dataFeed;
     private static HashMap<String, Session> sessions = new HashMap<String, Session>();
-    private static Exchange exchange = new exchange_simple();
+    private static Exchange exchange = new ExchangeComplex();
+
     
     
     @OnOpen
