@@ -1,5 +1,5 @@
 package Simulator;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.TreeMap;
 import java.util.LinkedList;
 
@@ -12,12 +12,14 @@ import java.util.LinkedList;
 
 public class OrderBook{
 	final String sym;                                            // symbol
-        int currOrderID = 0;                                       // monotonically-increasing orderID
         TreeMap<Long, LinkedList<Order>> bids;
         TreeMap<Long, LinkedList<Order>> asks;
         
+        
 	public OrderBook(String sym){
-            this.sym = sym;         
+            this.sym = sym;
+            this.bids = new TreeMap<>();
+            this.asks = new TreeMap<>();
 	}
         
         public String getSym(){
@@ -26,7 +28,7 @@ public class OrderBook{
 
         public long bestBid(){
             if(!bids.isEmpty()){
-                return bids.lastKey();
+                return bids.firstKey();
             } else {
                 return Long.MIN_VALUE;
             }
@@ -43,10 +45,9 @@ public class OrderBook{
        
         // Processes an incoming limit order
         // Order(String userID, String sym, long price, long qty, int side, int order_type)
-       private LinkedList<Trade> handleOrder(Order order){
+       public LinkedList<Trade> handleOrder(Order order){
            
-           LinkedList<Trade> trades = new LinkedList<Trade>();
-
+           LinkedList<Trade> trades = new LinkedList<>();
            boolean isMarket = (order.getType() == 0);
                    
            //get opposing side book
@@ -84,10 +85,11 @@ public class OrderBook{
        
        
        // Insert a limit order into the book
-        private void insertOrder(Order order){
+        public void insertOrder(Order order){
             long price = order.getPrice();
             // orders at price exist, add to end of queue
             TreeMap<Long, LinkedList<Order>> sideBook = getSideBook(order.getSide());
+            //System.out.println(sideBook.keySet().toString());        
             if(sideBook.containsKey(price)){
                 LinkedList<Order> entries = sideBook.get(price);
                 entries.add(order);
@@ -119,7 +121,34 @@ public class OrderBook{
                 }
             }
        }
-        
+       
+       // gets total volume at a certain price
+       public long getTotalQty(long price){
+          long qty = 0;
+          LinkedList<Order> entries = bids.get(price);
+          for(Order order : entries){
+              qty += order.getQty();
+          }
+          return qty;
+       }
+       
+        /* 
+        Testing methods
+        */
+       public void printBidBook(){
+           for(Long price : bids.keySet()){
+               String temp = "";
+               for(Order order : bids.get(price)){
+                          temp += " "+ Long.toString(order.getQty());
+               }
+               System.out.println(Long.toString(price) + " " + temp);
+              
+           }
+       }
+       
+       public void printAskBook(){
+           
+       }
  
     private TreeMap<Long, LinkedList<Order>> getSideBook(int side){
         return (side == 0) ? bids : asks;

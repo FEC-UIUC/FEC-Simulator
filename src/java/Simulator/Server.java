@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.LinkedList;
 
 import javax.websocket.OnClose;
 import javax.websocket.OnMessage;
@@ -75,8 +76,12 @@ public class Server {
         }
         else if (msgType.equals("order"))
         {
-            String resp = handleOrder(message_map, session.getId());
-            sendToUser(resp, session);
+            LinkedList<HashMap<String,String>> resps = handleOrder(message_map, session.getId());
+            for(HashMap<String, String> resp : resps){
+                String respString = MessageFormatter.format(resp);
+                sendToUser(respString, session);
+            }
+            
         }
         else if (msgType.equals("cancel"))
         {
@@ -136,15 +141,17 @@ public class Server {
     }
     
     
-    private String handleOrder(HashMap<String, String> message_map, String userID) {
+    private LinkedList<HashMap<String, String>> handleOrder(HashMap<String, String> message_map, String userID) {
         String symbol = message_map.get("symbol");
         long price = Long.parseLong(message_map.get("price"));
         long qty = Long.parseLong(message_map.get("quantity"));
         int side = Integer.parseInt(message_map.get("side"));
         int order_type = Integer.parseInt(message_map.get("order_type"));
         long orderID = Long.parseLong(message_map.get("orderID"));
-        HashMap<String, String> resp = exchange.placeOrder(userID, symbol, price, qty, side, order_type, orderID);
-        return MessageFormatter.format(resp);
+        //long orderID, String userID, String sym, long price, long qty, int side, int order_type
+        LinkedList<HashMap<String, String>> resps = exchange.placeOrder(orderID, userID, symbol, price, qty, side, order_type);
+        return resps;
+        //return MessageFormatter.format(resp);
     }
     
     private String handleCancel(HashMap<String, String> message_map, String userID){
