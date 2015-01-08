@@ -22,6 +22,14 @@ public class Trade {
        remaining_taker = taker.getQty();
     }
 
+    public long getMakerOrderID() {
+        return makerOrderID;
+    }
+
+    public long getTakerOrderID() {
+        return takerOrderID;
+    }
+    
     public String getMakerUserID() {
         return makerUserID;
     }

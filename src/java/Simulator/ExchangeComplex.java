@@ -20,11 +20,11 @@ import java.util.TreeMap;
  */
 public class ExchangeComplex extends Exchange {
     
+    HashMap<String,BufferedReader> dataFeeds = new HashMap<String,BufferedReader>();
     HashMap<String, OrderBook> orderbooks;
     TreeMap<Long, Order> orders;
     TreeMap<String, User> users;
     TreeMap<String, String> usernames;
-    HashMap<String,BufferedReader> dataFeeds; 
     
     
     public ExchangeComplex(){
@@ -52,6 +52,14 @@ public class ExchangeComplex extends Exchange {
         return true;
     }
     
+    //check if security is mapped already
+    public boolean securityExists(String symbol){		
+            if(orderbooks.containsKey(symbol)){
+                    return true;
+            }
+            return false;
+    }
+    
     // @TODO: This is just a quote? rename method?
     public HashMap<String, String> snapShot(String symbol)  throws Exception{
            if(orderbooks.containsKey(symbol)){
@@ -76,7 +84,14 @@ public class ExchangeComplex extends Exchange {
     } 
     
     public LinkedList<HashMap<String, String>> placeOrder(long orderID, String userID, String sym, long price, long qty, int side, int order_type){
-        // @TODO: cancel the order if the symbol's orderbook doesn't exist
+        
+        LinkedList<HashMap<String, String>> responses = new LinkedList<>();
+        
+        if(!securityExists(sym)){
+            responses.add(orderFailureMessage(orderID));
+            return responses;
+        }
+        
         Order order = new Order(orderID, userID, sym, price, qty, side, order_type);
         
         // @TODO: Check if user exists already?
@@ -87,19 +102,38 @@ public class ExchangeComplex extends Exchange {
            return null;
         }
         orders.put(orderID, order);
-        LinkedList<HashMap<String, String>> results = new LinkedList<> ();
         LinkedList<Trade> trades = orderbooks.get(sym).handleOrder(order);
         for(Trade trade : trades){
                 HashMap<String, String> result = new HashMap<>();
                 result.put("message_type", "order");
-                result.put("orderID", Long.toString(orderID));
+                result.put("orderID", Long.toString(trade.getMakerOrderID()));
                 result.put("action", "0"); // @TODO:  0 - filled, 1 - partial fill, 2 - placed, 3 - cancelled
                 result.put("filled", Long.toString(trade.getFilled()));
                 result.put("remaining", Long.toString(trade.getMakerRemaining()));
                 result.put("money", "0");
-                results.add(result);
+                responses.add(result);
+                
+                result = new HashMap<>();
+                result.put("message_type", "order");
+                result.put("orderID", Long.toString(trade.getTakerOrderID()));
+                result.put("action", "0"); // @TODO:  0 - filled, 1 - partial fill, 2 - placed, 3 - cancelled
+                result.put("filled", Long.toString(trade.getFilled()));
+                result.put("remaining", Long.toString(trade.getTakerRemaining()));
+                result.put("money", "0");
+                responses.add(result);
         }
-        return results;
+        return responses;
+    }
+    
+    private HashMap<String, String> orderFailureMessage(long orderID){
+        HashMap<String, String> result = new HashMap<>();
+        result.put("message_type", "order");
+        result.put("orderID", Long.toString(orderID));
+        result.put("action", "3");
+        result.put("filled", "0");
+        result.put("remaining", "0");
+        result.put("money", "0");
+        return result;
     }
     
     public HashMap<String, String> cancelOrder(String userID, long orderID){
@@ -195,6 +229,8 @@ public class ExchangeComplex extends Exchange {
     
     
     }
+    
+    
 
     
 }

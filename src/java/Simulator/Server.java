@@ -151,7 +151,6 @@ public class Server {
         long orderID = Long.parseLong(message_map.get("orderID"));
         LinkedList<HashMap<String, String>> resps = exchange.placeOrder(orderID, userID, symbol, price, qty, side, order_type);
         return resps;
-        //return MessageFormatter.format(resp);
     }
     
     private String handleCancel(HashMap<String, String> message_map, String userID){

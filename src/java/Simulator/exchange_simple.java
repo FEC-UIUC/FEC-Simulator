@@ -97,7 +97,7 @@ public class exchange_simple extends Exchange {
 	}
 	
 
-        public LinkedList<HashMap<String, String>> placeOrder(String userID, String sym, long price, long amount, int side, int type, long orderID)
+        public LinkedList<HashMap<String, String>> placeOrder(long orderID, String userID, String sym, long price, long qty, int side, int order_type)
         {
             HashMap<String, String> result = new HashMap<String, String>();
             if(!securityExists(sym)){
@@ -116,16 +116,16 @@ public class exchange_simple extends Exchange {
             
                 if(side == 1 && price <= sec.bid_price)
                 {
-                    fill_qty = -1*Math.min(amount, sec.bid_qty);
+                    fill_qty = -1*Math.min(qty, sec.bid_qty);
                     fill_price = sec.bid_price;
                 }
                 else if (side == 0 && price >= sec.ask_price)
                 {
-                    fill_qty = Math.min(amount, sec.ask_qty);
+                    fill_qty = Math.min(qty, sec.ask_qty);
                     fill_price = sec.ask_price;
                 }
 
-                String action = getActionString(fill_qty, amount);
+                String action = getActionString(fill_qty, qty);
 
                 String money = Long.toString(-1*fill_qty*fill_price);
                 
@@ -155,6 +155,17 @@ public class exchange_simple extends Exchange {
             return 0;
         }
         
+        public List<Order> getUserOrders(String userID){
+            return null;
+            /*if(users.containsKey(userID)){
+                return users.get(userID).getUserOrders();
+            }
+            else{
+                System.out.println(userID + " does not exist");
+                return null;
+            }*/
+        }
+        
         public HashMap<String, String> addUser(String username, String userID){
             /* TODO:
                 check if user already exists
@@ -173,10 +184,6 @@ public class exchange_simple extends Exchange {
         
         public boolean removeUser(String userID){
             return true;
-        }
-        
-        public List<String> getUserOrders(String userID) {
-            return new ArrayList<String>();
         }
         
         
