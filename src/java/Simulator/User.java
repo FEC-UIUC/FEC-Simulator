@@ -21,7 +21,7 @@ public class User {
     String userID;
     List<Order> orders = new LinkedList<>();
     TreeMap<String, Long> portfolio = new TreeMap<>();
-    long money;
+    long money; 
     
     private HashMap<String, File> algoFiles = new HashMap<>();
 
@@ -36,6 +36,14 @@ public class User {
     public void setMoney(Long money){
         this.money = money;
     }
+    
+    public void addMoney(Long money){
+        this.money += money;
+    }
+    
+    public void subtractMoney(Long money){
+        this.money -= money;
+    }
 
     public List<Order> getUserOrders(){
         return orders;
@@ -49,12 +57,35 @@ public class User {
         orders.remove(order);
     }
 
+    public void addPosition(String sym, Long qty){
+        if(portfolio.containsKey(sym)){
+           portfolio.put(sym, portfolio.get(sym)+qty);
+        }
+        else{
+            portfolio.put(sym, qty);
+        }
+    }
+    
+    public void subtractPosition(String sym, Long qty){
+        if(portfolio.containsKey(sym)){
+           portfolio.put(sym, portfolio.get(sym)-qty);
+        }
+        else{
+            portfolio.put(sym, -qty);
+        }
+    }
+    
     public void changePortfolio(String symbol, long quantity){
         portfolio.put(symbol, quantity);
     }
 
     public TreeMap<String, Long> getPortfolio(){
         return portfolio;
+    }
+    
+   
+    public long getSecurityPosition(String sym){
+         return 0;
     }
 
 }
