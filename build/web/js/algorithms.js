@@ -29,6 +29,24 @@ function addAlgorithm(){
 
 
 function uploadAlgorithm(algorithm) {
+    
+    send({
+        "msg_type" : "algo-file",
+        "filename" : file
+    })
+    
+    var file = algorithm["file"];
+    var reader = new FileReader();
+    var rawData = new ArrayBuffer();
+    
+    reader.onload = function(e) {
+        rawData = e.target.result;
+        ws.send(rawData);
+        alert("The algorithm has been transferred.")
+    }
+    
+    reader.readAsArrayBuffer(file); 
+    
     return true;
 }
 

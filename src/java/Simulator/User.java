@@ -5,6 +5,9 @@
  */
 package Simulator;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeMap;
@@ -14,10 +17,13 @@ import java.util.TreeMap;
  * @author Greg Pastorek
  */
 public class User {
+    
     String userID;
     List<Order> orders = new LinkedList<>();
     TreeMap<String, Long> portfolio = new TreeMap<>();
     long money;
+    
+    private HashMap<String, File> algoFiles = new HashMap<>();
 
     public User(String userID){
         this.userID = userID;

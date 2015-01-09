@@ -1,15 +1,20 @@
 package Simulator;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.LinkedList;
 
+import javax.websocket.OnOpen;
 import javax.websocket.OnClose;
 import javax.websocket.OnMessage;
-import javax.websocket.OnOpen;
+import javax.websocket.OnError;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
@@ -19,7 +24,10 @@ public class Server {
     private static DataFeed dataFeed;
     private static HashMap<String, Session> sessions = new HashMap<String, Session>();
     private static Exchange exchange = new ExchangeComplex();
-
+    
+    FileOutputStream filestream = null;
+    File uploadedFile = null;
+    final static File filePath = new File("C:\\Users\\Greg Pastorek\\Documents\\NetBeansProjects\\Simulator\\algos");
     
     
     @OnOpen
@@ -60,6 +68,17 @@ public class Server {
             ex.printStackTrace();
         }
     }
+    
+    @OnMessage
+    public void processUpload(ByteBuffer msg, boolean last, Session session) {
+        while(msg.hasRemaining()) {         
+            try {
+                filestream.write(msg.get());
+            } catch (IOException e) {               
+                e.printStackTrace();
+            }
+        }
+    }
 
     @OnMessage
     public void onMessage(String message, Session session) {
@@ -82,7 +101,6 @@ public class Server {
                 String respString = MessageFormatter.format(resp);
                 sendToUser(respString, resp.get("userID"));
             }
-            
         }
         else if (msgType.equals("cancel"))
         {
@@ -97,6 +115,9 @@ public class Server {
                 sendToUser(respString, session);
             }
         }
+        else if (msgType.equals("algo-file")){
+            handleUploadFile(message_map, session.getId());
+        }
         
     }
 
@@ -104,6 +125,11 @@ public class Server {
     public void onClose(Session session) {
         System.out.println("Session " + session.getId() + " has ended");
         sessions.remove(session.getId());
+    }
+    
+    @OnError
+    public void error(Session session, Throwable t) {
+        t.printStackTrace();
     }
     
     
@@ -167,5 +193,26 @@ public class Server {
         LinkedList<HashMap<String, String>> resp = exchange.addUser(userID, username);  /*TODO - add user, return new user message if new*/
         return resp;
     }
+    
+    private void handleUploadFile(HashMap<String, String> message_map, String userID){
+        if(!message_map.get("content").equals("end")) {
+            String fileName = message_map.get("filename");
+            uploadedFile = new File(new File(filePath, userID), fileName);
+            try {
+                filestream = new FileOutputStream(uploadedFile);
+            } catch (FileNotFoundException e) {     
+                e.printStackTrace();
+            }
+        }else {
+            try {
+                filestream.flush();
+                filestream.close();                
+            } catch (IOException e) {       
+                e.printStackTrace();
+            }
+        }
+    }
+    
+    
     
 }

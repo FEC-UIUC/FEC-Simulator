@@ -9,6 +9,8 @@ function openSocket(){
 
     webSocket = new WebSocket("ws://localhost:8080/Simulator/server");
 
+    webSocket.binaryType = "arraybuffer";
+
     webSocket.onopen = function(event){
             sendNewUser();
             if(event.data === undefined)
