@@ -62,23 +62,24 @@ public class ExchangeComplex extends Exchange {
             return false;
     }
     
+    
     // @TODO: This is just a quote? rename method?
     public HashMap<String, String> snapShot(String symbol)  throws Exception{
-           if(orderbooks.containsKey(symbol)){
-                OrderBook orderbook = orderbooks.get(symbol);
-                HashMap<String, String> result = new HashMap<>();
-                result.put("message_type", "snapshot");
-                result.put("symbol", symbol);
-                result.put("bid_price", Long.toString(orderbook.bestBid()));
-                result.put("ask_price", Long.toString(orderbook.bestAsk()));
-                result.put("last_price", Long.toString((orderbook.bestAsk()+orderbook.bestBid())/2));
-                result.put("bid_qty", Long.toString(orderbook.getTotalQty(orderbook.bestBid())));
-                result.put("ask_qty", Long.toString(orderbook.getTotalQty(orderbook.bestAsk())));
-                return result;
-            }
-            else{
-                throw new Exception(symbol + " does not exist");
-            }
+        if(orderbooks.containsKey(symbol)){
+             OrderBook orderbook = orderbooks.get(symbol);
+             HashMap<String, String> result = new HashMap<>();
+             result.put("message_type", "snapshot");
+             result.put("symbol", symbol);
+             result.put("bid_price", Long.toString(orderbook.bestBid()));
+             result.put("ask_price", Long.toString(orderbook.bestAsk()));
+             result.put("last_price", Long.toString((orderbook.bestAsk()+orderbook.bestBid())/2));
+             result.put("bid_qty", Long.toString(orderbook.getTotalQty(orderbook.bestBid())));
+             result.put("ask_qty", Long.toString(orderbook.getTotalQty(orderbook.bestAsk())));
+             return result;
+         }
+         else{
+             throw new Exception(symbol + " does not exist");
+         }
     }
     
     public Set<String> getSymList(){
