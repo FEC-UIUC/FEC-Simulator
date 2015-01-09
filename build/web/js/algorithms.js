@@ -33,7 +33,7 @@ function uploadAlgorithm(algorithm) {
     send({
         "message_type" : "algo-file",
         "content" : "start",
-        "filename" : parseInt(algorithm["id"]) + "_" + algorithm["file"]
+        "filename" : parseInt(algorithm["id"]) + "_" + algorithm["file"].name
     })
     
     var file = algorithm["file"];
@@ -42,7 +42,7 @@ function uploadAlgorithm(algorithm) {
     
     reader.onload = function(e) {
         rawData = e.target.result;
-        ws.send(rawData);
+        webSocket.send(rawData);
         send({
             "message_type" : "algo-file",
             "content" : "end"
