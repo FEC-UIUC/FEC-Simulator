@@ -24,7 +24,7 @@ public class ExchangeComplex extends Exchange {
     HashMap<String, OrderBook> orderbooks;
     TreeMap<Long, Order> orders;
     TreeMap<String, User> users;
-    TreeMap<String, String> usernames;
+    TreeMap<String, String> usernames_to_ids;
     
     
     public ExchangeComplex(){
@@ -49,6 +49,8 @@ public class ExchangeComplex extends Exchange {
     
     // @TODO: What is this?
     public boolean addSecurity(String fname, String symbol)  throws FileNotFoundException, Exception{
+        //TODO - open file and send parameters to the market bots
+        orderbooks.put(symbol, new OrderBook(symbol));
         return true;
     }
     
@@ -83,49 +85,42 @@ public class ExchangeComplex extends Exchange {
         return orderbooks.keySet();
     } 
     
+    
     public LinkedList<HashMap<String, String>> placeOrder(long orderID, String userID, String sym, long price, long qty, int side, int order_type){
         
         LinkedList<HashMap<String, String>> responses = new LinkedList<>();
         
         if(!securityExists(sym)){
-            responses.add(orderFailureMessage(orderID));
+            responses.add(orderFailureMessage(orderID, userID));
             return responses;
         }
         
         Order order = new Order(orderID, userID, sym, price, qty, side, order_type);
         
-        // @TODO: Check if user exists already?
+        orders.put(orderID, order);
+        
         if(users.containsKey(userID)){
             users.get(userID).addOrder(order);
-        } // else add new user or just throw exception??
-        else{
-           return null;
         }
-        orders.put(orderID, order);
+        
         LinkedList<Trade> trades = orderbooks.get(sym).handleOrder(order);
+        
+        int sidemult = (order.getSide() == 0) ? 1 : -1;
+        
         for(Trade trade : trades){
-                HashMap<String, String> result = new HashMap<>();
-                result.put("message_type", "order");
-                result.put("orderID", Long.toString(trade.getMakerOrderID()));
-                result.put("action", "0"); // @TODO:  0 - filled, 1 - partial fill, 2 - placed, 3 - cancelled
-                result.put("filled", Long.toString(trade.getFilled()));
-                result.put("remaining", Long.toString(trade.getMakerRemaining()));
-                result.put("money", "0");
-                responses.add(result);
-                
-                result = new HashMap<>();
-                result.put("message_type", "order");
-                result.put("orderID", Long.toString(trade.getTakerOrderID()));
-                result.put("action", "0"); // @TODO:  0 - filled, 1 - partial fill, 2 - placed, 3 - cancelled
-                result.put("filled", Long.toString(trade.getFilled()));
-                result.put("remaining", Long.toString(trade.getTakerRemaining()));
-                result.put("money", "0");
-                responses.add(result);
+            long trade_money = trade.getFilled() * trade.getPrice();
+            
+            responses.add(makeTradeConfirmation(trade.getMakerUserID(), trade.getMakerOrderID(), 
+                                                trade.getFilled(), trade.getMakerRemaining(), -1*sidemult*trade_money));
+            
+            responses.add(makeTradeConfirmation(trade.getTakerUserID(), trade.getTakerOrderID(), 
+                                                trade.getFilled(), trade.getTakerRemaining(), sidemult*trade_money));
         }
         return responses;
     }
     
-    private HashMap<String, String> orderFailureMessage(long orderID){
+    
+    private HashMap<String, String> orderFailureMessage(long orderID, String userID){
         HashMap<String, String> result = new HashMap<>();
         result.put("message_type", "order");
         result.put("orderID", Long.toString(orderID));
@@ -133,21 +128,49 @@ public class ExchangeComplex extends Exchange {
         result.put("filled", "0");
         result.put("remaining", "0");
         result.put("money", "0");
+        result.put("userID", userID);
         return result;
     }
+    
+    
+    private HashMap<String, String> makeTradeConfirmation(String userID, long orderID, long filled, long remaining, long money) {
+        HashMap<String, String> result = new HashMap<>();
+        result.put("message_type", "order");
+        result.put("orderID", Long.toString(orderID));
+        result.put("action", getActionString(filled, remaining)); 
+        result.put("filled", Long.toString(filled));
+        result.put("remaining", Long.toString(remaining));
+        result.put("money", Long.toString(money));
+        result.put("userID", userID);
+        return result;
+    }
+    
     
     public HashMap<String, String> cancelOrder(String userID, long orderID){
         
         Order orderToCancel = orders.get(orderID);
-        LinkedList<Order> entries = (orderToCancel.getSide() == 0) ? orderbooks.get(orderToCancel).bids.get(orderToCancel.getPrice()) : orderbooks.get(orderToCancel).asks.get(orderToCancel.getPrice());
+        
+        OrderBook orderbook = orderbooks.get(orderToCancel.getSym());
+        
+        LinkedList<Order> entries;
+        
+        if(orderToCancel.getSide() == 0) {
+            entries = orderbook.bids.get(orderToCancel.getPrice());
+        } else {
+            entries = orderbook.asks.get(orderToCancel.getPrice());;
+        }
+            
         boolean success = entries.remove(orderToCancel);
 
         HashMap<String, String> result = new HashMap<>();
+        
         result.put("message_type", "cancel");
         result.put("orderID", Long.toString(orderID));
         result.put("success", success ? "1":"0");
+        
         return result;
     }
+    
     
     public long getUserMoney(String userID){
         if(users.containsKey(userID)){
@@ -159,6 +182,7 @@ public class ExchangeComplex extends Exchange {
         }
     }
     
+    
     public List<Order> getUserOrders(String userID){
         if(users.containsKey(userID)){
             return users.get(userID).getUserOrders();
@@ -169,66 +193,65 @@ public class ExchangeComplex extends Exchange {
         }
     }
     
-    public HashMap<String, String> addUser(String username, String userID){
-        /* TODO:
-            check if user already exists
-            if already exists:
-                -send series of messages of all active orders
-                -return new_user message with appropriate money
-            if new user:
-                -add user to list of active users, make structure
-                -return new_user message with appropriate userID and money
-        */
-        usernames.put(username, userID);
+    
+    public LinkedList<HashMap<String, String>> addUser(String username, String userID){
+
+        if(usernames_to_ids.containsKey(username)){
+            User user = users.get(usernames_to_ids.get(username));
+            
+            //TODO - recover user
+            
+            //remove old user entry
+            users.remove(usernames_to_ids.get(username));
+            usernames_to_ids.remove(username);
+        }
+        
+        //add new user entry
+        usernames_to_ids.put(username, userID);
         users.put(userID, new User(userID));
         
-        return new HashMap<>();
+        return new LinkedList<>();
     }
         
-    public boolean removeUser(String userID){    
-        return (users.remove(userID)!= null );
+    public boolean removeUser(String username){
+        String userID = getUserID(username);
+        if(userID == null){
+            return false;
+        } else {
+            usernames_to_ids.remove(username);
+            users.remove(userID);
+            return true;
+        }
     }
     
     public String getUserID(String username){
-        if(usernames.containsKey(username)){
-            return usernames.get(username);
+        if(usernames_to_ids.containsKey(username)){
+            return usernames_to_ids.get(username);
         }
         else{
             System.out.println(username + " does not exist");
             return null;
         }
     }
+    
+    
+    private String getActionString(long fill_qty, long remaining){
+        if(Math.abs(fill_qty) > 0 && remaining == 0){
+            return "0";
+        } else if (Math.abs(fill_qty) > 0){
+            return "1";
+        } else if (fill_qty == 0 && remaining > 0){
+            return "2";
+        } else {
+            return "3";
+        }
+    }
+    
     /* 
     Testing methods
     */
 
-    public class User {
-        String userID;
-        List<Order> orders;
-        long money;
-
-        public User(String userID){
-            this.userID = userID;
-        }
-        
-        private long getMoney(){
-            return money;
-        }
-        
-        private void setMoney(Long money){
-            this.money = money;
-        }
-        
-        private List<Order> getUserOrders(){
-            return orders;
-        }
-        
-        private void addOrder(Order order){
-            orders.add(order);
-        }
     
-    
-    }
     
     
 

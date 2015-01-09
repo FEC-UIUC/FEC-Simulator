@@ -166,7 +166,7 @@ public class exchange_simple extends Exchange {
             }*/
         }
         
-        public HashMap<String, String> addUser(String username, String userID){
+        public LinkedList<HashMap<String, String>> addUser(String username, String userID){
             /* TODO:
                 check if user already exists
                 if already exists:
@@ -176,10 +176,12 @@ public class exchange_simple extends Exchange {
                     -add user to list of active users, make structure
                     -return new_user message with appropriate userID and money
             */
+            LinkedList<HashMap<String, String>> resp_list = new LinkedList<HashMap<String, String>>();
             HashMap<String, String> resp = new HashMap<String, String>();
             resp.put("message_type", "new_user");
             resp.put("money", "0");
-            return resp;
+            resp_list.add(resp);
+            return resp_list;
         }
         
         public boolean removeUser(String userID){

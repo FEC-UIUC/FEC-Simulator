@@ -29,7 +29,7 @@ public abstract class Exchange {
     
     public abstract List<Order> getUserOrders(String userID); 
     
-    public abstract HashMap<String, String> addUser(String username, String userID);
+    public abstract LinkedList<HashMap<String, String>> addUser(String username, String userID);
         
     public abstract boolean removeUser(String userID);
     

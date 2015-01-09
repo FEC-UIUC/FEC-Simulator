@@ -80,7 +80,7 @@ public class Server {
             LinkedList<HashMap<String,String>> resps = handleOrder(message_map, session.getId());
             for(HashMap<String, String> resp : resps){
                 String respString = MessageFormatter.format(resp);
-                sendToUser(respString, session);
+                sendToUser(respString, resp.get("userID"));
             }
             
         }
@@ -91,8 +91,11 @@ public class Server {
         }
         else if (msgType.equals("new_user"))
         {
-            String resp = handleNewUser(message_map, session.getId());
-            sendToUser(resp, session);
+            LinkedList<HashMap<String,String>> resps = handleNewUser(message_map, session.getId());
+            for(HashMap<String, String> resp : resps){
+                String respString = MessageFormatter.format(resp);
+                sendToUser(respString, session);
+            }
         }
         
     }
@@ -159,10 +162,10 @@ public class Server {
         return MessageFormatter.format(resp);
     }
     
-    private String handleNewUser(HashMap<String, String> message_map, String userID) {
+    private LinkedList<HashMap<String, String>> handleNewUser(HashMap<String, String> message_map, String userID) {
         String username = message_map.get("username");
-        HashMap<String, String> resp = exchange.addUser(userID, username);  /*TODO - add user, return new user message if new*/
-        return MessageFormatter.format(resp);
+        LinkedList<HashMap<String, String>> resp = exchange.addUser(userID, username);  /*TODO - add user, return new user message if new*/
+        return resp;
     }
     
 }
