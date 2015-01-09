@@ -1,10 +1,14 @@
 package Simulator;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.logging.Level;
@@ -29,8 +33,10 @@ public class Server {
     File uploadedFile = null;
     final static File filePath = new File("C:\\Users\\Greg Pastorek\\Documents\\NetBeansProjects\\Simulator\\algos");
 
+    
     @OnOpen
     public void onOpen(Session session) {
+        
         try {
             session.getBasicRemote().sendText("message_type=message|from=Server|message=Connection Established");
             sessions.put(session.getId(), session);
@@ -40,6 +46,7 @@ public class Server {
         }
     }
 
+    
     public void sendToAll(String msg) {
 
         for (Entry<String, Session> e : sessions.entrySet()) {
@@ -51,6 +58,7 @@ public class Server {
         }
     }
 
+    
     public void sendToUser(String msg, String userId) {
         Session session = sessions.get(userId);
         try {
@@ -60,6 +68,7 @@ public class Server {
         }
     }
 
+    
     public void sendToUser(String msg, Session session) {
         try {
             session.getBasicRemote().sendText(msg);
@@ -68,6 +77,7 @@ public class Server {
         }
     }
 
+    
     @OnMessage
     public void processUpload(ByteBuffer msg, boolean last, Session session) {
         while (msg.hasRemaining()) {
@@ -79,52 +89,55 @@ public class Server {
         }
     }
 
+    
     @OnMessage
     public void onMessage(String message, Session session) {
         System.out.println("Message from " + session.getId() + ": " + message);
         HashMap<String, String> message_map = MessageFormatter.parse(message);
         String msgType = message_map.get("message_type");
         if (msgType.equals("message")) {
-            String tosend = "message_type=message|from=" + message_map.get("from") + "|message=" + message_map.get("message");
-            sendToAll(tosend);
-        } else if (msgType.equals("admin")) {
+            broadcastChatMessage(message_map);
+        } 
+        else if (msgType.equals("admin")) {
             handleAdmin(message_map, session.getId());
-        } else if (msgType.equals("order")) {
-            LinkedList<HashMap<String, String>> resps = handleOrder(message_map, session.getId());
-            for (HashMap<String, String> resp : resps) {
-                String respString = MessageFormatter.format(resp);
-                sendToUser(respString, resp.get("userID"));
-            }
-        } else if (msgType.equals("cancel")) {
-            String resp = handleCancel(message_map, session.getId());
-            sendToUser(resp, session);
-        } else if (msgType.equals("new_user")) {
-            LinkedList<HashMap<String, String>> resps = handleNewUser(message_map, session.getId());
-            for (HashMap<String, String> resp : resps) {
-                String respString = MessageFormatter.format(resp);
-                sendToUser(respString, session);
-            }
-        } else if (msgType.equals("algo-file")) {
-            try {
-                handleUploadFile(message_map, session.getId());
-            } catch (IOException ex) {
-                Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
-            }
+        } 
+        else if (msgType.equals("order")) {
+            handleOrder(message_map, session.getId());
+        } 
+        else if (msgType.equals("cancel")) {
+            handleCancel(message_map, session.getId(), session);
+        } 
+        else if (msgType.equals("new_user")) {
+            handleNewUser(message_map, session.getId(), session);
+        } 
+        else if (msgType.equals("algo-file")) {
+            handleUploadFile(message_map, session.getId());
+        } 
+        else if (msgType.equals("algo-command")) {
+            handleAlgoCommand(message_map, session.getId());
         }
-
     }
 
+    
     @OnClose
     public void onClose(Session session) {
         System.out.println("Session " + session.getId() + " has ended");
         sessions.remove(session.getId());
     }
 
+    
     @OnError
     public void error(Session session, Throwable t) {
         t.printStackTrace();
     }
+    
+    
+    private void broadcastChatMessage(HashMap<String, String> message_map){
+        String tosend = MessageFormatter.format(message_map);
+        sendToAll(tosend);
+    }
 
+    
     private void handleAdmin(HashMap<String, String> message_map, String userID) {
         //TODO - check if userID is the adminID
         if (message_map.get("command").equals("start")) {
@@ -146,6 +159,7 @@ public class Server {
         }
     }
 
+    
     private void bootUser(String userID) {
         if (userID == null) {
             return;
@@ -162,40 +176,53 @@ public class Server {
         }
     }
 
-    private LinkedList<HashMap<String, String>> handleOrder(HashMap<String, String> message_map, String userID) {
+    
+    private void handleOrder(HashMap<String, String> message_map, String userID) {
         String symbol = message_map.get("symbol");
         long price = Long.parseLong(message_map.get("price"));
         long qty = Long.parseLong(message_map.get("quantity"));
         int side = Integer.parseInt(message_map.get("side"));
         int order_type = Integer.parseInt(message_map.get("order_type"));
         long orderID = Long.parseLong(message_map.get("orderID"));
+        
         LinkedList<HashMap<String, String>> resps = exchange.placeOrder(orderID, userID, symbol, price, qty, side, order_type);
-        return resps;
+        
+        for (HashMap<String, String> resp : resps) {
+            String respString = MessageFormatter.format(resp);
+            sendToUser(respString, resp.get("userID"));
+        }
     }
 
-    private String handleCancel(HashMap<String, String> message_map, String userID) {
+    
+    private void handleCancel(HashMap<String, String> message_map, String userID, Session session) {
         long orderID = Long.parseLong(message_map.get("orderID"));
         HashMap<String, String> resp = exchange.cancelOrder(userID, orderID);
-        return MessageFormatter.format(resp);
+        sendToUser(MessageFormatter.format(resp), session);
     }
 
-    private LinkedList<HashMap<String, String>> handleNewUser(HashMap<String, String> message_map, String userID) {
+    
+    private void handleNewUser(HashMap<String, String> message_map, String userID, Session session) {
         String username = message_map.get("username");
-        LinkedList<HashMap<String, String>> resp = exchange.addUser(userID, username);  /*TODO - add user, return new user message if new*/
-
-        return resp;
+        
+        LinkedList<HashMap<String, String>> resps = exchange.addUser(userID, username);
+        
+        for (HashMap<String, String> resp : resps) {
+            String respString = MessageFormatter.format(resp);
+            sendToUser(respString, session);
+        }
     }
 
-    private void handleUploadFile(HashMap<String, String> message_map, String userID) throws IOException {
-        if (!message_map.get("content").equals("end")) {
+    
+    private void handleUploadFile(HashMap<String, String> message_map, String userID) {
+        if (!message_map.get("command").equals("end")) {
             String fileName = message_map.get("filename");
             uploadedFile = new File(new File(filePath, userID), fileName);
             uploadedFile.getParentFile().mkdirs();
-            uploadedFile.createNewFile();
             try {
+                uploadedFile.createNewFile();
                 filestream = new FileOutputStream(uploadedFile);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
+            } catch (IOException ex) {
+                Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
             }
         } else {
             try {
@@ -206,5 +233,25 @@ public class Server {
             }
         }
     }
+    
+    
+    private void handleAlgoCommand(HashMap<String, String> message_map, String userID) {
+        String command  = message_map.get("command");
+        if(command.equals("run")){
+            try {
+                ArrayList<String> securities = new ObjectMapper().readValue(message_map.get("securities"), ArrayList.class);
+                HashMap<String,String> parameters = new ObjectMapper().readValue(message_map.get("parameters"), HashMap.class);
+            } catch (IOException ex) {
+                Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        else if (command.equals("stop")) {
+            
+        }
+        else if (command.equals("remove")) {
+            
+        }
+    }
+   
 
 }

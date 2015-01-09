@@ -32,7 +32,7 @@ function uploadAlgorithm(algorithm) {
     
     send({
         "message_type" : "algo-file",
-        "content" : "start",
+        "command" : "start",
         "filename" : parseInt(algorithm["id"]) + "_" + algorithm["file"].name
     })
     
@@ -45,22 +45,31 @@ function uploadAlgorithm(algorithm) {
         webSocket.send(rawData);
         send({
             "message_type" : "algo-file",
-            "content" : "end"
+            "command" : "end"
         })
-        alert("The algorithm has been transferred.")
-        
+        alert("The algorithm has been transferred.")       
     }
     
     reader.readAsArrayBuffer(file); 
-    
-    
     
     return true;
 }
 
 
 function runAlgorithm(algorithm){
-
+    var parameters = {
+        "window" : 3,
+        "aggression" : 2
+    }
+    var securities = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'FB'];
+    var msg = {
+        "message_type" : "algo-command",
+        "command" : "run",
+        "filename" : parseInt(algorithm["id"]) + "_" + algorithm["file"].name,
+        "parameters" : parameters,
+        "securities" : securities
+    }
+    send(msg);
 }
 
 

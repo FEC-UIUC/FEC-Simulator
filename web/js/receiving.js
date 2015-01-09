@@ -123,6 +123,6 @@ function handleSnapshot(msg){
 
 
 function handleChatMessage(msg) {
-    var m = "<b>" + msg['from'] + ":</b> " + msg['message']; 
+    var m = "<b>" + msg['from'] + ":</b> " + msg['message'].replaceAll("___bar___", "|"); 
     writeResponse(m);
 }
