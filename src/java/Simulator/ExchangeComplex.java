@@ -20,20 +20,11 @@ import java.util.TreeMap;
  */
 public class ExchangeComplex extends Exchange {
     
-<<<<<<< HEAD
     HashMap<String,BufferedReader> dataFeeds;
     HashMap<String, OrderBook> orderbooks;
     TreeMap<Long, Order> orders;
     TreeMap<String, User> users;
     TreeMap<String, String> usernames_to_ids;
-=======
-    HashMap<String,BufferedReader> dataFeeds = new HashMap<String,BufferedReader>();
-    HashMap<String, OrderBook> orderbooks = new HashMap<>();
-    TreeMap<Long, Order> orders  = new TreeMap<>();
-    TreeMap<String, User> users  = new TreeMap<>();
-    TreeMap<String, String> usernames_to_ids = new TreeMap<>();
->>>>>>> 60bba69ee9dfdbd2f6a5cfd842a4bd875394d22f
-    
     
     public ExchangeComplex(){
         dataFeeds = new HashMap<String,BufferedReader>();
