@@ -20,15 +20,18 @@ import java.util.TreeMap;
  */
 public class ExchangeComplex extends Exchange {
     
-    HashMap<String,BufferedReader> dataFeeds = new HashMap<String,BufferedReader>();
-    HashMap<String, OrderBook> orderbooks = new HashMap<>();
-    TreeMap<Long, Order> orders  = new TreeMap<>();
-    TreeMap<String, User> users  = new TreeMap<>();
-    TreeMap<String, String> usernames_to_ids = new TreeMap<>();
-    
+    HashMap<String,BufferedReader> dataFeeds;
+    HashMap<String, OrderBook> orderbooks;
+    TreeMap<Long, Order> orders;
+    TreeMap<String, User> users;
+    TreeMap<String, String> usernames_to_ids;
     
     public ExchangeComplex(){
-        
+        dataFeeds = new HashMap<String,BufferedReader>();
+        orderbooks = new HashMap<>();
+        orders  = new TreeMap<>();
+        users  = new TreeMap<>();
+        usernames_to_ids = new TreeMap<>();
     }
     public void nextTick() throws Exception{
         
@@ -105,7 +108,7 @@ public class ExchangeComplex extends Exchange {
         }
         
         LinkedList<Trade> trades = orderbooks.get(sym).handleOrder(order);
-        
+        updateUsers(trades);
         int sidemult = (order.getSide() == 0) ? 1 : -1;
         
         for(Trade trade : trades){
@@ -120,6 +123,34 @@ public class ExchangeComplex extends Exchange {
         return responses;
     }
     
+    private void updateUsers(LinkedList<Trade> trades){
+        String sym = orders.get(trades.peekFirst().getMakerOrderID()).getSym();
+        int makerSide = orders.get(trades.peekFirst().getMakerOrderID()).getSide();
+        User maker = users.get(trades.peekFirst().getMakerUserID());
+        User taker = users.get(trades.peekFirst().getTakerUserID());
+        for(Trade trade : trades){
+            long qty = trade.getFilled();
+            long price = trade.getPrice();
+            if(makerSide == 0){
+                maker.subtractMoney(qty*price);
+                taker.addMoney(qty*price);
+                maker.addPosition(sym, qty);
+                taker.subtractPosition(sym, qty);
+            }
+            else{
+                maker.addMoney(qty*price);
+                taker.subtractMoney(qty*price);
+                maker.subtractPosition(sym, qty);
+                taker.addPosition(sym, qty);
+            }
+           removeOrders(trade.getMakerOrderID(), trade.getTakerOrderID());
+        }
+    }
+    
+    private void removeOrders(long makerOrderID, long takerOrderID){
+        orders.remove(makerOrderID);
+        orders.remove(takerOrderID);
+    }
     
     private HashMap<String, String> orderFailureMessage(long orderID, String userID){
         HashMap<String, String> result = new HashMap<>();

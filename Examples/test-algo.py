@@ -1,5 +1,6 @@
-from numpy.random import randint
 
+
+from numpy.random import randint
 
 securities = ["AAPL", "GOOG", "MSFT"]  # default securities
 

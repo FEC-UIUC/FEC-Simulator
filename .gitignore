@@ -17,3 +17,5 @@ private.properties
 private.xml
 algos
 /dist/
+*.properties
+*.xml
