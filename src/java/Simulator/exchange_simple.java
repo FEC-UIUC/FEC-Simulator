@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 
-public class exchange_simple extends Exchange {
+public class exchange_simple {
 	
 	HashMap<String,Security> securityMap = new HashMap<String,Security>();
 	HashMap<String,BufferedReader> dataFeeds = new HashMap<String,BufferedReader>();
@@ -143,12 +143,14 @@ public class exchange_simple extends Exchange {
                     
         }
         
-        public HashMap<String, String> cancelOrder(String userID, long orderID){
+        public LinkedList<HashMap<String, String>> cancelOrder(String userID, long orderID){
+            LinkedList<HashMap<String, String>> results = new LinkedList<>();
             HashMap<String, String> result = new HashMap<String, String>();
             result.put("message_type", "cancel");
             result.put("orderID", Long.toString(orderID));
             result.put("success", "0");
-            return result;
+            results.add(result);
+            return results;
         }
         
         public long getUserMoney(String userID){
@@ -187,6 +189,8 @@ public class exchange_simple extends Exchange {
         public boolean removeUser(String userID){
             return true;
         }
+        
+     
         
         
         private String getActionString(long fill_qty, long amount){

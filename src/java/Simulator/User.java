@@ -18,7 +18,7 @@ import java.util.TreeMap;
  */
 public class User {
     
-    String userID;
+    LinkedList<String> userIDs;
     List<Order> orders = new LinkedList<>();
     TreeMap<String, Long> portfolio = new TreeMap<>();
     long money; 
@@ -26,7 +26,20 @@ public class User {
     private HashMap<String, File> algoFiles = new HashMap<>();
 
     public User(String userID){
-        this.userID = userID;
+        this.userIDs = new LinkedList<>();
+        this.userIDs.add(userID);
+    }
+    
+    public boolean addUserId(String userID){
+        return this.userIDs.add(userID);
+    }
+    
+    public boolean removeUserId(String userID){
+        return this.userIDs.remove(userID);
+    }
+    
+    public LinkedList<String> getUserIds(){
+        return this.userIDs;
     }
 
     public long getMoney(){

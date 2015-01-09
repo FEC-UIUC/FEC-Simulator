@@ -57,6 +57,7 @@ function handleCancel(msg){
     } else if(msg["success"] == 1){
         writeResponse("Cancel Success on order " + msg["orderID"]);
         orders[msg["orderID"]]["status"] = "Canceled";
+        orders[msg["orderID"]]["remaining"] = 0;
         updateOrdersTable(orders[msg["orderID"]]);
     }
 }
@@ -69,7 +70,7 @@ function handleNewUser(msg){
 }
 
 
-function handleSnapshot(msg){
+function handleQuote(msg){
 
     if(!securities.hasOwnProperty(msg['symbol'])){
         securities[msg['symbol']] = {

@@ -59,9 +59,10 @@ function uploadAlgorithm(algorithm) {
 function runAlgorithm(algorithm){
     var parameters = {
         "window" : 3,
-        "aggression" : 2
+        "aggression" : 2,
+        "securities" : ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'FB']
     }
-    var securities = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'FB'];
+
     var msg = {
         "message_type" : "algo-command",
         "command" : "run",

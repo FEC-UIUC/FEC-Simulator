@@ -1,12 +1,11 @@
-
-
 from numpy.random import randint
 
-securities = ["AAPL", "GOOG", "MSFT"]  # default securities
 
+# default parameters
 parameters = {
 	"window" : 1,
-	"aggression" : 1
+	"aggression" : 1,
+	"securities" : ["AAPL", "GOOG", "MSFT"]
 }
 
 def initialize(globals):

@@ -24,14 +24,14 @@ public class ExchangeComplex extends Exchange {
     HashMap<String, OrderBook> orderbooks;
     TreeMap<Long, Order> orders;
     TreeMap<String, User> users;
-    TreeMap<String, String> usernames_to_ids;
+    TreeMap<String, String> userids_to_name;
     
     public ExchangeComplex(){
         dataFeeds = new HashMap<String,BufferedReader>();
         orderbooks = new HashMap<>();
         orders  = new TreeMap<>();
         users  = new TreeMap<>();
-        usernames_to_ids = new TreeMap<>();
+        userids_to_name = new TreeMap<>();
     }
     public void nextTick() throws Exception{
         
@@ -67,11 +67,11 @@ public class ExchangeComplex extends Exchange {
     
     
     // @TODO: This is just a quote? rename method?
-    public HashMap<String, String> snapShot(String symbol)  throws Exception{
+    public HashMap<String, String> getQuote(String symbol)  throws Exception{
         if(orderbooks.containsKey(symbol)){
              OrderBook orderbook = orderbooks.get(symbol);
              HashMap<String, String> result = new HashMap<>();
-             result.put("message_type", "snapshot");
+             result.put("message_type", "quote");
              result.put("symbol", symbol);
              result.put("bid_price", Long.toString(orderbook.bestBid()));
              result.put("ask_price", Long.toString(orderbook.bestAsk()));
@@ -113,12 +113,14 @@ public class ExchangeComplex extends Exchange {
         
         for(Trade trade : trades){
             long trade_money = trade.getFilled() * trade.getPrice();
-            
-            responses.add(makeTradeConfirmation(trade.getMakerUserID(), trade.getMakerOrderID(), 
-                                                trade.getFilled(), trade.getMakerRemaining(), -1*sidemult*trade_money));
-            
-            responses.add(makeTradeConfirmation(trade.getTakerUserID(), trade.getTakerOrderID(), 
-                                                trade.getFilled(), trade.getTakerRemaining(), sidemult*trade_money));
+            for(String uID : getAllUsersIDs(trade.getMakerUserID())){
+                responses.add(makeTradeConfirmation(uID, trade.getMakerOrderID(), 
+                                                    trade.getFilled(), trade.getMakerRemaining(), -1*sidemult*trade_money));
+            }
+            for(String uID : getAllUsersIDs(trade.getTakerUserID())){
+                responses.add(makeTradeConfirmation(uID, trade.getTakerOrderID(), 
+                                                    trade.getFilled(), trade.getTakerRemaining(), sidemult*trade_money));
+            }
         }
         return responses;
     }
@@ -178,7 +180,7 @@ public class ExchangeComplex extends Exchange {
     }
     
     
-    public HashMap<String, String> cancelOrder(String userID, long orderID){
+    public LinkedList<HashMap<String, String>> cancelOrder(String userID, long orderID){
         
         Order orderToCancel = orders.get(orderID);
         
@@ -194,13 +196,19 @@ public class ExchangeComplex extends Exchange {
             
         boolean success = entries.remove(orderToCancel);
 
+        LinkedList<HashMap<String, String>> results = new LinkedList<>();
+        
         HashMap<String, String> result = new HashMap<>();
         
-        result.put("message_type", "cancel");
-        result.put("orderID", Long.toString(orderID));
-        result.put("success", success ? "1":"0");
+        for(String uID : getAllUsersIDs(userID)){
+            result.put("message_type", "cancel");
+            result.put("orderID", Long.toString(orderID));
+            result.put("success", success ? "1":"0");
+            result.put("userID", uID);
+            results.add(result);
+        }
         
-        return result;
+        return results;
     }
     
     
@@ -228,42 +236,95 @@ public class ExchangeComplex extends Exchange {
     
     public LinkedList<HashMap<String, String>> addUser(String username, String userID){
 
-        if(usernames_to_ids.containsKey(username)){
-            User user = users.get(usernames_to_ids.get(username));
+        User user = null;
+        if(users.containsKey(username)){
+            user = users.get(username);
             
-            //TODO - recover user
+            //TODO - recover user order/portfolio
             
             //remove old user entry
-            users.remove(usernames_to_ids.get(username));
-            usernames_to_ids.remove(username);
+            for(String uID: user.getUserIds()){
+                userids_to_name.remove(uID);
+                user.removeUserId(uID);
+                users.remove(username);
+            }
         }
         
         //add new user entry
-        usernames_to_ids.put(username, userID);
-        users.put(userID, new User(userID));
+        userids_to_name.put(userID, username);
+        
+        //add new user object if needed
+        if(user == null){
+            users.put(username, new User(userID));
+        }
+        
         
         return new LinkedList<>();
     }
-        
-    public boolean removeUser(String username){
-        String userID = getUserID(username);
-        if(userID == null){
+    
+    public boolean addAlgoToUser(String username, String algoID){
+        if(userids_to_name.containsKey(algoID)){
             return false;
-        } else {
-            usernames_to_ids.remove(username);
-            users.remove(userID);
-            return true;
         }
+        
+        //add new userid entry
+        userids_to_name.put(algoID, username);
+        
+        if(users.containsKey(username)){
+            users.put(username, new User(algoID));
+        } else {
+            users.get(username).addUserId(algoID);
+        }
+        
+        return true;
     }
     
-    public String getUserID(String username){
-        if(usernames_to_ids.containsKey(username)){
-            return usernames_to_ids.get(username);
+    
+    public boolean removeAlgoFromUser(String username, String algoID){
+        if(!userids_to_name.containsKey(algoID)){
+            return false;
+        }
+
+        userids_to_name.remove(algoID);
+        
+        if(!users.containsKey(username)){
+            return false;
+        }
+        
+        users.get(username).removeUserId(algoID);
+        
+        return true;
+    }
+        
+    
+    public boolean removeUser(String username){
+        LinkedList<String> userIDs = getUserIDs(username);
+        for(String userID : userIDs){
+            if(userID != null){
+                userids_to_name.remove(userID);
+                users.get(username).removeUserId(userID);
+            }
+        }
+        return true;
+    }
+    
+    public LinkedList<String> getUserIDs(String username){
+        if(users.containsKey(username)){
+            return users.get(username).getUserIds();
         }
         else{
             System.out.println(username + " does not exist");
             return null;
         }
+    }
+    
+    public LinkedList<String> getAllUsersIDs(String userID){
+        String username = userids_to_name.get(userID);
+        if(username == null){
+            return null;
+        }
+        User user = users.get(username);
+        return user.getUserIds();
     }
     
     

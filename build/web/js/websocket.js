@@ -67,8 +67,8 @@ function messageHandler(event){
     else if (msg['message_type'] =='cancel'){
         handleCancel(msg);
     } 
-    else if (msg['message_type'] =='snapshot'){
-        handleSnapshot(msg);
+    else if (msg['message_type'] =='quote'){
+        handleQuote(msg);
     }
     else if (msg['message_type'] == 'new_user'){
         handleNewUser(msg);

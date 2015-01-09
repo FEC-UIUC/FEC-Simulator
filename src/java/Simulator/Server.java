@@ -109,7 +109,13 @@ public class Server {
         } 
         else if (msgType.equals("new_user")) {
             handleNewUser(message_map, session.getId(), session);
-        } 
+        }
+        else if (msgType.equals("new_algo")) {
+            handleNewAlgo(message_map, session.getId(), session);
+        }
+        else if (msgType.equals("remove_algo")) {
+            handleRemoveAlgo(message_map, session.getId(), session);
+        }
         else if (msgType.equals("algo-file")) {
             handleUploadFile(message_map, session.getId());
         } 
@@ -196,8 +202,12 @@ public class Server {
     
     private void handleCancel(HashMap<String, String> message_map, String userID, Session session) {
         long orderID = Long.parseLong(message_map.get("orderID"));
-        HashMap<String, String> resp = exchange.cancelOrder(userID, orderID);
-        sendToUser(MessageFormatter.format(resp), session);
+        LinkedList<HashMap<String, String>> resps = exchange.cancelOrder(userID, orderID);
+        for (HashMap<String, String> resp : resps) {
+            String respString = MessageFormatter.format(resp);
+            sendToUser(respString, resp.get("userID"));
+        }
+        
     }
 
     
@@ -210,6 +220,18 @@ public class Server {
             String respString = MessageFormatter.format(resp);
             sendToUser(respString, session);
         }
+    }
+    
+    
+    private void handleNewAlgo(HashMap<String, String> message_map, String userID, Session session) {
+        String username = message_map.get("username");
+        exchange.addAlgoToUser(userID, username);
+    }
+    
+    
+    private void handleRemoveAlgo(HashMap<String, String> message_map, String userID, Session session) {
+        String username = message_map.get("username");
+        exchange.removeAlgoFromUser(userID, username);
     }
 
     
