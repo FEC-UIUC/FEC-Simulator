@@ -24,4 +24,9 @@ def initialize(globals):
 '''
 def handle_data(globals, data):
 	for s in securities:
-		order(s, randint(-10, 10))
+		oID = order(s, randint(-10, 10))
+		print "OrderID = " + str(oID)
+		
+		
+def onOrderConfirm(orderID, price, filled):
+	print "Order confirmed - " + str((orderID, price, filled))

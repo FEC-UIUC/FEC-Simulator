@@ -2,12 +2,14 @@ package Simulator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -242,7 +244,22 @@ public class Server {
             uploadedFile.getParentFile().mkdirs();
             try {
                 uploadedFile.createNewFile();
-                filestream = new FileOutputStream(uploadedFile);
+                filestream = new FileOutputStream(uploadedFile, true);
+                
+                /* insert algo-wrapper.py to head of new file */
+                File algoWrapperFile = new File("C:\\Users\\Greg Pastorek\\Documents\\NetBeansProjects\\Simulator\\algos\\algo-wrapper.py");
+                FileChannel source = null;
+                FileChannel destination = null;
+                try {
+                    source = new FileInputStream(algoWrapperFile).getChannel();
+                    destination = filestream.getChannel();
+                    destination.transferFrom(source, 0, source.size());
+                }
+                finally {
+                    if(source != null) {
+                        source.close();
+                    }
+                }
             } catch (IOException ex) {
                 Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
             }
