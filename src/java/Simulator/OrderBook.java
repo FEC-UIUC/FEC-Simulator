@@ -126,8 +126,10 @@ public class OrderBook{
        public long getTotalQty(long price){
           long qty = 0;
           LinkedList<Order> entries = bids.get(price);
-          for(Order order : entries){
-              qty += order.getQty();
+          if(entries != null){
+              for(Order order : entries){
+                  qty += order.getQty();
+              }
           }
           return qty;
        }
