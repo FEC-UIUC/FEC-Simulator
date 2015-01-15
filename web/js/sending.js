@@ -63,7 +63,7 @@ function sendNewUser() {
 
 function sendChatMessage(){
     var message_text = $("#messageinput").val();
-    message_text.replaceAll("|", "___bar___")
+    message_text.replace(/|/g, "___bar___")
     msg = {
         "message_type" : "message",
         "from" : username,

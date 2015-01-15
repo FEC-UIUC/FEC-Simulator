@@ -124,6 +124,6 @@ function handleQuote(msg){
 
 
 function handleChatMessage(msg) {
-    var m = "<b>" + msg['from'] + ":</b> " + msg['message'].replaceAll("___bar___", "|"); 
+    var m = "<b>" + msg['from'] + ":</b> " + msg['message'].replace(/___bar___/g, "|"); 
     writeResponse(m);
 }

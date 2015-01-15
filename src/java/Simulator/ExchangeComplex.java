@@ -328,6 +328,11 @@ public class ExchangeComplex extends Exchange {
     }
     
     
+    public String getUsername(String userID) {
+        return userids_to_name.get(userID);
+    }
+    
+    
     private String getActionString(long fill_qty, long remaining){
         if(Math.abs(fill_qty) > 0 && remaining == 0){
             return "0";

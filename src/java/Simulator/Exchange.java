@@ -37,6 +37,6 @@ public abstract class Exchange {
     
     public abstract boolean removeAlgoFromUser(String username, String algoID);
     
-    
+    public abstract String getUsername(String userID);
     
 }

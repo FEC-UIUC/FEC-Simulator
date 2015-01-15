@@ -33,6 +33,7 @@ function uploadAlgorithm(algorithm) {
     send({
         "message_type" : "algo-file",
         "command" : "start",
+        "id" : algorithm["id"],
         "filename" : parseInt(algorithm["id"]) + "_" + algorithm["file"].name
     })
     
@@ -66,20 +67,33 @@ function runAlgorithm(algorithm){
     var msg = {
         "message_type" : "algo-command",
         "command" : "run",
+        "id" : algorithm["id"],
         "filename" : parseInt(algorithm["id"]) + "_" + algorithm["file"].name,
-        "parameters" : parameters,
-        "securities" : securities
+        "parameters" : parameters
     }
     send(msg);
 }
 
 
 function stopAlgorithm(algorithm){
+    
+    var msg = {
+        "message_type" : "algo-command",
+        "command" : "stop",
+        "id" : algorithm["id"]
+    }
+    send(msg);
 
 }
 
 
 function removeAlgorithm(algorithm){
+    var msg = {
+        "message_type" : "algo-command",
+        "command" : "remove",
+        "id" : algorithm["id"]
+    }
+    send(msg);
     removeAlgorithmFromTable(algorithm);
     delete algorithms[algorithm["id"]];
 }

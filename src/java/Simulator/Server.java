@@ -28,17 +28,18 @@ import javax.websocket.server.ServerEndpoint;
 public class Server {
 
     private static DataFeed dataFeed;
-    private static HashMap<String, Session> sessions = new HashMap<String, Session>();
-    private static Exchange exchange = new ExchangeComplex();
-
+    private static final HashMap<String, Session> sessions = new HashMap<String, Session>();
+    private static final Exchange exchange = new ExchangeComplex();
+    
     FileOutputStream filestream = null;
     File uploadedFile = null;
-    final static File filePath = new File("C:\\Users\\Greg Pastorek\\Documents\\NetBeansProjects\\Simulator\\algos");
+    
+    final static File algoFilesDirectory = new File("C:\\Users\\Greg Pastorek\\Documents\\NetBeansProjects\\Simulator\\algos");
+    private static final String PYTHON_EXE = "C:\\Python27\\Python.exe";
 
     
     @OnOpen
     public void onOpen(Session session) {
-        
         try {
             session.getBasicRemote().sendText("message_type=message|from=Server|message=Connection Established");
             sessions.put(session.getId(), session);
@@ -172,8 +173,12 @@ public class Server {
         if (userID == null) {
             return;
         }
-        Session session_to_boot = sessions.get(userID);
+        
+        AlgoProcessManager.removeUser(exchange.getUsername(userID));
+        
         exchange.removeUser(userID);
+    
+        Session session_to_boot = sessions.get(userID);
         if (session_to_boot != null) {
             try {
                 sendToUser("message_type=message|message=You have been booted.", session_to_boot);
@@ -240,7 +245,7 @@ public class Server {
     private void handleUploadFile(HashMap<String, String> message_map, String userID) {
         if (!message_map.get("command").equals("end")) {
             String fileName = message_map.get("filename");
-            uploadedFile = new File(new File(filePath, userID), fileName);
+            uploadedFile = new File(new File(algoFilesDirectory, userID), fileName);
             uploadedFile.getParentFile().mkdirs();
             try {
                 uploadedFile.createNewFile();
@@ -278,19 +283,68 @@ public class Server {
         String command  = message_map.get("command");
         if(command.equals("run")){
             try {
-                ArrayList<String> securities = new ObjectMapper().readValue(message_map.get("securities"), ArrayList.class);
-                HashMap<String,String> parameters = new ObjectMapper().readValue(message_map.get("parameters"), HashMap.class);
+                String params = message_map.get("parameters");
+                String username = exchange.getUsername(userID);
+                String fileName = message_map.get("filename");
+                Long algoID = Long.parseLong(message_map.get("id"));
+                String filePath = new File(new File(algoFilesDirectory, userID), fileName).getAbsolutePath();
+                ProcessBuilder pb = new ProcessBuilder(PYTHON_EXE, filePath, "\"" + params + "\"", username);
+                Process p = pb.start();
+                AlgoProcessManager.addAlgo(username, algoID, p);
             } catch (IOException ex) {
                 Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         else if (command.equals("stop")) {
-            
+            String username = exchange.getUsername(userID);
+            Long algoID = Long.parseLong(message_map.get("id"));
+            AlgoProcessManager.stopAlgo(userID, algoID);
         }
         else if (command.equals("remove")) {
-            
+            String username = exchange.getUsername(userID);
+            Long algoID = Long.parseLong(message_map.get("id"));
+            AlgoProcessManager.stopAlgo(userID, algoID);
+            //TODO - remove file
         }
     }
    
+    private static class AlgoProcessManager {
+        
+        private static HashMap<String, HashMap<Long, Process>> runningAlgos = new HashMap<>();
+       
+        
+        public static boolean addAlgo(String username, Long algoID, Process p){
+            if(!runningAlgos.containsKey(username)) {
+                runningAlgos.put(username, new HashMap<Long, Process>());
+            }
+            HashMap<Long, Process> userAlgos = runningAlgos.get(username);
+            userAlgos.put(algoID, p);
+            return true;
+        }
+        
+        public static boolean stopAlgo(String username, Long algoID){
+            if(!runningAlgos.containsKey(username)) {
+                return false;
+            }
+            HashMap<Long, Process> userAlgos = runningAlgos.get(username);
+            Process p = userAlgos.get(algoID);
+            p.destroy();
+            userAlgos.remove(algoID);
+            return true;
+        }
+        
+        public static boolean removeUser(String username){
+            if(!runningAlgos.containsKey(username)) {
+                return false;
+            }
+            HashMap<Long, Process> userAlgos = runningAlgos.get(username);
+            for(Long algoID : userAlgos.keySet()){
+                stopAlgo(username, algoID);
+            }
+            runningAlgos.remove(username);
+            return true;
+        }
+         
+    }
 
 }
