@@ -258,7 +258,7 @@ public class Server {
         if (!message_map.get("command").equals("end")) {
             uploadFileSuccess = true;
             String fileName = message_map.get("filename");
-            uploadedFile = new File(new File(algoFilesDirectory, sessionID), fileName);
+            uploadedFile = new File(new File(new File(algoFilesDirectory, "user-algos"), sessionID), fileName);
             uploadedFile.getParentFile().mkdirs();
             try {
                 uploadedFile.createNewFile();
@@ -314,7 +314,7 @@ public class Server {
                 String username = exchange.getUsername(sessionID);
                 String fileName = message_map.get("filename");
                 Long algoID = Long.parseLong(message_map.get("id"));
-                String filePath = new File(new File(algoFilesDirectory, sessionID), fileName).getAbsolutePath();
+                String filePath = new File(new File(new File(algoFilesDirectory, "user-algos"), sessionID), fileName).getAbsolutePath();
                 ProcessBuilder pb = new ProcessBuilder(PYTHON_EXE, filePath, "\"" + params + "\"", username, Long.toString(algoID));
                 Process p = pb.start();
                 AlgoProcessManager.addAlgo(username, algoID, p);

@@ -23,7 +23,7 @@ def initialize(globals):
   The main proccessing function.  This is called and passed data
 '''
 def handle_data(globals, data, orders):
-	for s in securities:
+	for s in data:
 		oID = order(s, randint(-10, 10), price=randint(80,120), order_type='limit')
 		print "OrderID = " + str(oID)
 		
