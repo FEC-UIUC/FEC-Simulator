@@ -73,5 +73,8 @@ function messageHandler(event){
     else if (msg['message_type'] == 'new_user'){
         handleNewUser(msg);
     }
+    else if (msg['message_type'] == 'algo-upload'){
+        handleAlgoUpload(msg);
+    }
 }
 

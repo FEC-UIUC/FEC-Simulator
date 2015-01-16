@@ -47,8 +47,7 @@ function uploadAlgorithm(algorithm) {
         send({
             "message_type" : "algo-file",
             "command" : "end"
-        })
-        alert("The algorithm has been transferred.")       
+        })       
     }
     
     reader.readAsArrayBuffer(file); 
@@ -69,9 +68,9 @@ function runAlgorithm(algorithm){
         "command" : "run",
         "id" : algorithm["id"],
         "filename" : parseInt(algorithm["id"]) + "_" + algorithm["file"].name,
-        "parameters" : parameters
+        "parameters" : JSON.stringify(parameters)
     }
-    send(msg);
+    send(msg);    
 }
 
 

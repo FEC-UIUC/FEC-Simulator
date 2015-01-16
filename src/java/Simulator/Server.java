@@ -33,6 +33,7 @@ public class Server {
     
     FileOutputStream filestream = null;
     File uploadedFile = null;
+    boolean uploadFileSuccess = true;
     
     final static File algoFilesDirectory = new File("C:\\Users\\Greg Pastorek\\Documents\\NetBeansProjects\\Simulator\\algos");
     private static final String PYTHON_EXE = "C:\\Python27\\Python.exe";
@@ -62,10 +63,11 @@ public class Server {
     }
 
     
-    public void sendToUser(String msg, String userId) {
-        Session session = sessions.get(userId);
+    public void sendToUser(String msg, String sessionID) {
+        Session session = sessions.get(sessionID);
         try {
-            session.getBasicRemote().sendText(msg);
+            System.out.println("Sending to " + sessionID + ": " + msg);
+            session.getBasicRemote().sendText(msg); //TODO - fix this nullptrexception
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -87,6 +89,7 @@ public class Server {
             try {
                 filestream.write(msg.get());
             } catch (IOException e) {
+                uploadFileSuccess = false;
                 e.printStackTrace();
             }
         }
@@ -147,8 +150,8 @@ public class Server {
     }
 
     
-    private void handleAdmin(HashMap<String, String> message_map, String userID) {
-        //TODO - check if userID is the adminID
+    private void handleAdmin(HashMap<String, String> message_map, String sessionID) {
+        //TODO - check if sessionID is the adminID
         if (message_map.get("command").equals("start")) {
             try {
                 exchange.addSecurity("C:\\Users\\Greg Pastorek\\Documents\\NetBeansProjects\\Simulator\\src\\java\\Simulator\\marketData.txt", "GOOG");
@@ -164,21 +167,21 @@ public class Server {
         } else if (message_map.get("command").equals("stop") && dataFeed != null) {
             dataFeed.end();
         } else if (message_map.get("command").equals("boot")) {
-            bootUser(message_map.get("userID"));
+            bootUser(message_map.get("sessionID"));
         }
     }
 
     
-    private void bootUser(String userID) {
-        if (userID == null) {
+    private void bootUser(String sessionID) {
+        if (sessionID == null) {
             return;
         }
         
-        AlgoProcessManager.removeUser(exchange.getUsername(userID));
+        AlgoProcessManager.removeUser(exchange.getUsername(sessionID));
         
-        exchange.removeUser(userID);
+        exchange.removeUser(sessionID);
     
-        Session session_to_boot = sessions.get(userID);
+        Session session_to_boot = sessions.get(sessionID);
         if (session_to_boot != null) {
             try {
                 sendToUser("message_type=message|message=You have been booted.", session_to_boot);
@@ -190,38 +193,46 @@ public class Server {
     }
 
     
-    private void handleOrder(HashMap<String, String> message_map, String userID) {
+    private void handleOrder(HashMap<String, String> message_map, String sessionID) {
         String symbol = message_map.get("symbol");
         long price = Long.parseLong(message_map.get("price"));
         long qty = Long.parseLong(message_map.get("quantity"));
         int side = Integer.parseInt(message_map.get("side"));
         int order_type = Integer.parseInt(message_map.get("order_type"));
         long orderID = Long.parseLong(message_map.get("orderID"));
+        String username = exchange.getUsername(sessionID);
         
-        LinkedList<HashMap<String, String>> resps = exchange.placeOrder(orderID, userID, symbol, price, qty, side, order_type);
+        LinkedList<HashMap<String, String>> resps = exchange.placeOrder(orderID, username, symbol, price, qty, side, order_type);
         
         for (HashMap<String, String> resp : resps) {
+            String _username = resp.get("username");
             String respString = MessageFormatter.format(resp);
-            sendToUser(respString, resp.get("userID"));
+            for(String sID : exchange.getSessionIDs(_username)){
+                sendToUser(respString, sID);
+            }
         }
     }
 
     
-    private void handleCancel(HashMap<String, String> message_map, String userID, Session session) {
+    private void handleCancel(HashMap<String, String> message_map, String sessionID, Session session) {
         long orderID = Long.parseLong(message_map.get("orderID"));
-        LinkedList<HashMap<String, String>> resps = exchange.cancelOrder(userID, orderID);
-        for (HashMap<String, String> resp : resps) {
-            String respString = MessageFormatter.format(resp);
-            sendToUser(respString, resp.get("userID"));
+        String username = exchange.getUsername(sessionID);
+        //System.out.println("username = " + username);
+        HashMap<String, String> resp = exchange.cancelOrder(username, orderID);
+        String respString = MessageFormatter.format(resp);
+        for(String sID : exchange.getSessionIDs(username)){
+            sendToUser(respString, sID);
         }
-        
     }
 
     
-    private void handleNewUser(HashMap<String, String> message_map, String userID, Session session) {
+    private void handleNewUser(HashMap<String, String> message_map, String sessionID, Session session) {
         String username = message_map.get("username");
         
-        LinkedList<HashMap<String, String>> resps = exchange.addUser(userID, username);
+        //kill running algos if user rebooting
+        AlgoProcessManager.removeUser(username);
+        
+        LinkedList<HashMap<String, String>> resps = exchange.addUser(sessionID, username);
         
         for (HashMap<String, String> resp : resps) {
             String respString = MessageFormatter.format(resp);
@@ -230,65 +241,81 @@ public class Server {
     }
     
     
-    private void handleNewAlgo(HashMap<String, String> message_map, String userID, Session session) {
+    private void handleNewAlgo(HashMap<String, String> message_map, String sessionID, Session session) {
         String username = message_map.get("username");
-        exchange.addAlgoToUser(userID, username);
+        System.out.println("Adding algo sessionId to " + username);
+        exchange.addAlgoToUser(username, sessionID);
     }
     
     
-    private void handleRemoveAlgo(HashMap<String, String> message_map, String userID, Session session) {
+    private void handleRemoveAlgo(HashMap<String, String> message_map, String sessionID, Session session) {
         String username = message_map.get("username");
-        exchange.removeAlgoFromUser(userID, username);
+        exchange.removeAlgoFromUser(sessionID, username);
     }
 
     
-    private void handleUploadFile(HashMap<String, String> message_map, String userID) {
+    private void handleUploadFile(HashMap<String, String> message_map, String sessionID) {
         if (!message_map.get("command").equals("end")) {
+            uploadFileSuccess = true;
             String fileName = message_map.get("filename");
-            uploadedFile = new File(new File(algoFilesDirectory, userID), fileName);
+            uploadedFile = new File(new File(algoFilesDirectory, sessionID), fileName);
             uploadedFile.getParentFile().mkdirs();
             try {
                 uploadedFile.createNewFile();
                 filestream = new FileOutputStream(uploadedFile, true);
                 
                 /* insert algo-wrapper.py to head of new file */
-                File algoWrapperFile = new File("C:\\Users\\Greg Pastorek\\Documents\\NetBeansProjects\\Simulator\\algos\\algo-wrapper.py");
-                FileChannel source = null;
-                FileChannel destination = null;
-                try {
-                    source = new FileInputStream(algoWrapperFile).getChannel();
-                    destination = filestream.getChannel();
-                    destination.transferFrom(source, 0, source.size());
-                }
-                finally {
-                    if(source != null) {
-                        source.close();
-                    }
-                }
+                File algoHeaderFile = new File(algoFilesDirectory, "algo-header.py");
+                appendFileContent(algoHeaderFile, filestream);
+                
             } catch (IOException ex) {
+                uploadFileSuccess = false;
                 Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
             }
         } else {
             try {
+                File algoFooterFile = new File(algoFilesDirectory, "algo-footer.py");
+                appendFileContent(algoFooterFile, filestream);
                 filestream.flush();
                 filestream.close();
+                int success = (uploadFileSuccess) ? 1 : 0;
+                this.sendToUser("message_type=algo-upload|success=" + Integer.toString(success), sessionID);
             } catch (IOException e) {
+                uploadFileSuccess = false;
                 e.printStackTrace();
             }
         }
     }
     
     
-    private void handleAlgoCommand(HashMap<String, String> message_map, String userID) {
+    private void appendFileContent(File contentToAdd, FileOutputStream fstream) throws FileNotFoundException, IOException{
+        
+        FileChannel source = null;
+        FileChannel destination = null;
+
+        try {
+            source = new FileInputStream(contentToAdd).getChannel();
+            destination = fstream.getChannel();
+            destination.transferFrom(source, destination.size(), source.size());
+        } 
+        finally {
+            if(source != null) {
+                source.close();
+            }
+        }
+    }
+    
+    
+    private void handleAlgoCommand(HashMap<String, String> message_map, String sessionID) {
         String command  = message_map.get("command");
         if(command.equals("run")){
             try {
                 String params = message_map.get("parameters");
-                String username = exchange.getUsername(userID);
+                String username = exchange.getUsername(sessionID);
                 String fileName = message_map.get("filename");
                 Long algoID = Long.parseLong(message_map.get("id"));
-                String filePath = new File(new File(algoFilesDirectory, userID), fileName).getAbsolutePath();
-                ProcessBuilder pb = new ProcessBuilder(PYTHON_EXE, filePath, "\"" + params + "\"", username);
+                String filePath = new File(new File(algoFilesDirectory, sessionID), fileName).getAbsolutePath();
+                ProcessBuilder pb = new ProcessBuilder(PYTHON_EXE, filePath, "\"" + params + "\"", username, Long.toString(algoID));
                 Process p = pb.start();
                 AlgoProcessManager.addAlgo(username, algoID, p);
             } catch (IOException ex) {
@@ -296,14 +323,14 @@ public class Server {
             }
         }
         else if (command.equals("stop")) {
-            String username = exchange.getUsername(userID);
+            String username = exchange.getUsername(sessionID);
             Long algoID = Long.parseLong(message_map.get("id"));
-            AlgoProcessManager.stopAlgo(userID, algoID);
+            AlgoProcessManager.stopAlgo(sessionID, algoID);
         }
         else if (command.equals("remove")) {
-            String username = exchange.getUsername(userID);
+            String username = exchange.getUsername(sessionID);
             Long algoID = Long.parseLong(message_map.get("id"));
-            AlgoProcessManager.stopAlgo(userID, algoID);
+            AlgoProcessManager.stopAlgo(sessionID, algoID);
             //TODO - remove file
         }
     }

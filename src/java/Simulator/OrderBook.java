@@ -28,7 +28,7 @@ public class OrderBook{
 
         public long bestBid(){
             if(!bids.isEmpty()){
-                return bids.firstKey();
+                return bids.lastKey();
             } else {
                 return Long.MIN_VALUE;
             }
@@ -36,7 +36,7 @@ public class OrderBook{
         
         public long bestAsk(){
             if(!asks.isEmpty()){
-                return asks.lastKey();
+                return asks.firstKey();
             } else {
                 return Long.MAX_VALUE;
             }
@@ -106,32 +106,43 @@ public class OrderBook{
        private void fillOrder(Order taker, LinkedList<Order> entries, LinkedList<Trade> trades){
            Order entry = entries.peekFirst(); // first order at bestPrice
            while(entry != null && taker.getQty() > 0){
-                if(entry.getQty() < taker.getQty()){
+                if(entry.getQty() <= taker.getQty()){
                     //exhaust current order
-                    trades.add(new Trade(entry, taker, entry.getQty()));
                     taker.setQty(taker.getQty() - entry.getQty());  // filled some
+                    long filled = entry.getQty();
+                    entry.setQty(0L);
+                    trades.add(new Trade(entry, taker, filled));
                     entries.pop(); // filled up the first order, remove it from linked list
                     entry = entries.peekFirst();
                 }
                 else{
                     // successfully filled the order in full
-                    trades.add(new Trade(entry, taker, taker.getQty()));
+                    long filled = taker.getQty();
                     entry.setQty(entry.getQty() - taker.getQty());
                     taker.setQty(0L);
+                    trades.add(new Trade(entry, taker, filled));
                 }
             }
        }
        
        // gets total volume at a certain price
-       public long getTotalQty(long price){
+       public long getLevelQty(long price, int side){
           long qty = 0;
-          LinkedList<Order> entries = bids.get(price);
+          LinkedList<Order> entries = (side == 0) ? bids.get(price) : asks.get(price);
           if(entries != null){
               for(Order order : entries){
                   qty += order.getQty();
               }
           }
           return qty;
+       }
+       
+       public long getBestBidQty(){
+           return getLevelQty(this.bestBid(), 0);
+       }
+       
+       public long getBestAskQty(){
+           return getLevelQty(this.bestAsk(), 1);
        }
        
         /* 

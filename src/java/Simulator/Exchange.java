@@ -21,22 +21,24 @@ public abstract class Exchange {
     
     public abstract Set<String> getSymList(); 
     
-    public abstract LinkedList<HashMap<String, String>> placeOrder(long orderID, String userID, String sym, long price, long qty, int side, int order_type);
+    public abstract LinkedList<HashMap<String, String>> placeOrder(long orderID, String username, String sym, long price, long qty, int side, int order_type);
     
-    public abstract LinkedList<HashMap<String, String>> cancelOrder(String userID, long orderID);
+    public abstract HashMap<String, String> cancelOrder(String username, long orderID);
     
-    public abstract long getUserMoney(String userID);
+    public abstract long getUserMoney(String username);
     
-    public abstract List<Order> getUserOrders(String userID); 
+    public abstract List<Order> getUserOrders(String username); 
     
-    public abstract LinkedList<HashMap<String, String>> addUser(String username, String userID);
+    public abstract LinkedList<HashMap<String, String>> addUser(String username, String sessionID);
     
     public abstract boolean addAlgoToUser(String username, String algoID);
         
-    public abstract boolean removeUser(String userID);
+    public abstract boolean removeUser(String sessionID);
     
     public abstract boolean removeAlgoFromUser(String username, String algoID);
     
-    public abstract String getUsername(String userID);
+    public abstract String getUsername(String sessionID);
+    
+    public abstract LinkedList<String> getSessionIDs(String username);
     
 }

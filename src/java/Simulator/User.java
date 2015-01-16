@@ -18,28 +18,28 @@ import java.util.TreeMap;
  */
 public class User {
     
-    LinkedList<String> userIDs;
+    LinkedList<String> sessionIDs;
     List<Order> orders = new LinkedList<>();
     TreeMap<String, Long> portfolio = new TreeMap<>();
     long money; 
     
     private HashMap<String, File> algoFiles = new HashMap<>();
 
-    public User(String userID){
-        this.userIDs = new LinkedList<>();
-        this.userIDs.add(userID);
+    public User(String sessionID){
+        this.sessionIDs = new LinkedList<>();
+        this.sessionIDs.add(sessionID);
     }
     
-    public boolean addUserId(String userID){
-        return this.userIDs.add(userID);
+    public boolean addSessionId(String sessionID){
+        return this.sessionIDs.add(sessionID);
     }
     
-    public boolean removeUserId(String userID){
-        return this.userIDs.remove(userID);
+    public boolean removeSessionId(String sessionID){
+        return this.sessionIDs.remove(sessionID);
     }
     
-    public LinkedList<String> getUserIds(){
-        return this.userIDs;
+    public LinkedList<String> getSessionIds(){
+        return this.sessionIDs;
     }
 
     public long getMoney(){

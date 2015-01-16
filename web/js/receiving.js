@@ -1,12 +1,7 @@
 
 function handleOrder(msg){
-
-    if(!orders.hasOwnProperty(parseInt(msg["orderID"]))){
-      writeResponse("Got order " + msg["orderID"] + ", what the hell.");
-      return;
-    }
-
-    var security = securities[order["symbol"]];
+    
+    var security = securities[msg["symbol"]];
 
     addMoney(parseInt(msg["money"]));
 
@@ -126,4 +121,13 @@ function handleQuote(msg){
 function handleChatMessage(msg) {
     var m = "<b>" + msg['from'] + ":</b> " + msg['message'].replace(/___bar___/g, "|"); 
     writeResponse(m);
+}
+
+
+function handleAlgoUpload(msg) {
+    if(msg["success"] == "1"){
+        alert("Upload successful.");
+    } else {
+        alert("Upload failed.");
+    }
 }
