@@ -83,9 +83,17 @@ public class User {
         return portfolio;
     }
     
+    public String getPortfolioSecurities(){
+        return portfolio.keySet().toString();
+    }
    
     public long getSecurityPosition(String sym){
-         return 0;
+         if(portfolio.containsKey(sym)){
+             return portfolio.get(sym);
+         }
+         else{
+             return 0;
+         }
     }
 
 }
