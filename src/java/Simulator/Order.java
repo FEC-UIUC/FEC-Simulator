@@ -11,16 +11,16 @@ package Simulator;
 public class Order{
 
         private long orderID;
-	private String userID;
+	private String username;
 	private String sym;
 	private long price;
 	private long qty;
 	private int side;
 	private int order_type;
 
-	public Order(long orderID, String userID, String sym, long price, long qty, int side, int order_type){
+	public Order(long orderID, String username, String sym, long price, long qty, int side, int order_type){
                 this.orderID = orderID;
-		this.userID = userID;
+		this.username = username;
 		this.sym = sym;
 		this.price = price;
 		this.qty = qty;
@@ -32,8 +32,8 @@ public class Order{
 		this.orderID = orderID;
 	}
 
-	public void setUserID(String userID){
-		this.userID = userID;
+	public void setUsername(String username){
+		this.username = username;
 	}
 
 	public void setSym(String sym){
@@ -60,8 +60,8 @@ public class Order{
 		return orderID;
 	}
 
-	public String getUserID(){
-		return userID;
+	public String getUsername(){
+		return username;
 	}
 
 	public String getSym(){

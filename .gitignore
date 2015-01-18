@@ -15,5 +15,7 @@ hs_err_pid*
 private.properties
 
 private.xml
-algos
+algos/user-algos
 /dist/
+*.properties
+*.xml

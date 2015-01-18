@@ -26,7 +26,7 @@ function addMoney(val){
     $("#money-span").html(_money);
 }
 
-
+//TODO - make the lower table a trade/cancel history, not filled/canceled orders
 function updateOrdersTable(order){
 
     var order_row = order["tablepointer"]; 
@@ -52,7 +52,7 @@ function updateOrdersTable(order){
     } else {
         $("#current-orders-tbody").append(order_row);
         var cancel_order_button = order_row.find(".cancel-order").find("button");
-        cancel_order_button.click(function(e){ sendCancel(order["orderID"]);});
+        cancel_order_button.unbind("click").click(function(e){ sendCancel(order["orderID"]);});
     }
 
 }

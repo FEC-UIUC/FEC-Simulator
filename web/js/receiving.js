@@ -1,12 +1,7 @@
 
 function handleOrder(msg){
-
-    if(!orders.hasOwnProperty(parseInt(msg["orderID"]))){
-      writeResponse("Got order " + msg["orderID"] + ", what the hell.");
-      return;
-    }
-
-    var security = securities[order["symbol"]];
+    
+    var security = securities[msg["symbol"]];
 
     addMoney(parseInt(msg["money"]));
 
@@ -57,6 +52,7 @@ function handleCancel(msg){
     } else if(msg["success"] == 1){
         writeResponse("Cancel Success on order " + msg["orderID"]);
         orders[msg["orderID"]]["status"] = "Canceled";
+        orders[msg["orderID"]]["remaining"] = 0;
         updateOrdersTable(orders[msg["orderID"]]);
     }
 }
@@ -69,7 +65,7 @@ function handleNewUser(msg){
 }
 
 
-function handleSnapshot(msg){
+function handleQuote(msg){
 
     if(!securities.hasOwnProperty(msg['symbol'])){
         securities[msg['symbol']] = {
@@ -123,6 +119,15 @@ function handleSnapshot(msg){
 
 
 function handleChatMessage(msg) {
-    var m = "<b>" + msg['from'] + ":</b> " + msg['message']; 
+    var m = "<b>" + msg['from'] + ":</b> " + msg['message'].replace(/___bar___/g, "|"); 
     writeResponse(m);
+}
+
+
+function handleAlgoUpload(msg) {
+    if(msg["success"] == "1"){
+        alert("Upload successful.");
+    } else {
+        alert("Upload failed.");
+    }
 }

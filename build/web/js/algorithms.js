@@ -32,7 +32,8 @@ function uploadAlgorithm(algorithm) {
     
     send({
         "message_type" : "algo-file",
-        "content" : "start",
+        "command" : "start",
+        "id" : algorithm["id"],
         "filename" : parseInt(algorithm["id"]) + "_" + algorithm["file"].name
     })
     
@@ -45,31 +46,53 @@ function uploadAlgorithm(algorithm) {
         webSocket.send(rawData);
         send({
             "message_type" : "algo-file",
-            "content" : "end"
-        })
-        alert("The algorithm has been transferred.")
-        
+            "command" : "end"
+        })       
     }
     
     reader.readAsArrayBuffer(file); 
-    
-    
     
     return true;
 }
 
 
 function runAlgorithm(algorithm){
+    var parameters = {
+        "window" : 3,
+        "aggression" : 2,
+        "securities" : ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'FB']
+    }
 
+    var msg = {
+        "message_type" : "algo-command",
+        "command" : "run",
+        "id" : algorithm["id"],
+        "filename" : parseInt(algorithm["id"]) + "_" + algorithm["file"].name,
+        "parameters" : JSON.stringify(parameters)
+    }
+    send(msg);    
 }
 
 
 function stopAlgorithm(algorithm){
+    
+    var msg = {
+        "message_type" : "algo-command",
+        "command" : "stop",
+        "id" : algorithm["id"]
+    }
+    send(msg);
 
 }
 
 
 function removeAlgorithm(algorithm){
+    var msg = {
+        "message_type" : "algo-command",
+        "command" : "remove",
+        "id" : algorithm["id"]
+    }
+    send(msg);
     removeAlgorithmFromTable(algorithm);
     delete algorithms[algorithm["id"]];
 }

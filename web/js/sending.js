@@ -12,7 +12,7 @@ function sendOrder(symbol){
     var message = {
         "message_type" : "order",
         "symbol" : symbol,
-        "price" : price,
+        "price" : (parseInt(order_type) == 0) ? 0 :  parseInt(price),
         "side" : BS,
         "quantity" : quantity,
         "order_type" : order_type,
@@ -20,11 +20,11 @@ function sendOrder(symbol){
     }
 
     if(price > 0){
-        webSocket.send(formatMessage(message));
+        send(message);
         orders[orderID] = {
             "orderID" : orderID,
             "symbol" : symbol,
-            "price" : parseInt(price),
+            "price" : (parseInt(order_type) == 0) ? "-" :  parseInt(price),
             "side" : (parseInt(BS) == 0) ? "BUY" : "SELL",
             "order_type" : (parseInt(order_type) == 0) ? "Market" : "Limit",
             "filled" : 0,
@@ -47,7 +47,7 @@ function sendCancel(orderID){
             "message_type" : "cancel",
             "orderID" : orderID
         }
-        webSocket.send(formatMessage(msg));
+        send(msg);
     }
 }
 
@@ -63,6 +63,7 @@ function sendNewUser() {
 
 function sendChatMessage(){
     var message_text = $("#messageinput").val();
+    message_text.replace(/|/g, "___bar___")
     msg = {
         "message_type" : "message",
         "from" : username,

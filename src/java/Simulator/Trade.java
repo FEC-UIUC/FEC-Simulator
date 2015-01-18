@@ -2,26 +2,32 @@
 package Simulator;
 
 public class Trade {
+    String symbol;
     long makerOrderID;
     long takerOrderID;
-    String makerUserID;
-    String takerUserID;
+    String makerUsername;
+    String takerUsername;
     long filled;
     long price;
     long remaining_maker;
     long remaining_taker;
 
     public Trade(Order maker, Order taker, long quantity){
+       symbol = maker.getSym();
        makerOrderID = maker.getOrderID();
        takerOrderID = taker.getOrderID();
-       makerUserID = maker.getUserID();
-       takerUserID = taker.getUserID();
+       makerUsername = maker.getUsername();
+       takerUsername = taker.getUsername();
        price = maker.getPrice();
        filled = quantity;
        remaining_maker = maker.getQty();
        remaining_taker = taker.getQty();
     }
 
+    public String getSymbol(){
+        return symbol;
+    }
+    
     public long getMakerOrderID() {
         return makerOrderID;
     }
@@ -30,12 +36,12 @@ public class Trade {
         return takerOrderID;
     }
     
-    public String getMakerUserID() {
-        return makerUserID;
+    public String getMakerUsername() {
+        return makerUsername;
     }
 
-    public String getTakerUserID() {
-        return takerUserID;
+    public String getTakerUsername() {
+        return takerUsername;
     }
 
     public long getFilled() {
