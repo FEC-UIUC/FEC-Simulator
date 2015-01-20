@@ -5,8 +5,23 @@ function handleOrder(msg){
 
     addMoney(parseInt(msg["money"]));
     
-    //TODO - create order if order doesn't exist
-    order = orders[msg["orderID"]];
+    var order = orders[msg["orderID"]];
+    
+    //create order if order doesn't exist
+    if(order == null){
+        order= {
+            "orderID" : msg["orderID"],
+            "symbol" : msg["symbol"],
+            "price" : (parseInt(msg["order_type"]) == 0) ? "-" :  parseInt(price),
+            "side" : (parseInt(msg["side"]) == 0) ? "BUY" : "SELL",
+            "order_type" : (parseInt(msg["order_type"]) == 0) ? "Market" : "Limit",
+            "filled" : 0,
+            "remaining" : parseInt(msg["quantity"]),
+            "status" : "Pending",
+            "tablepointer" : null
+        };
+    }
+    
     order["remaining"] = parseInt(msg["remaining"]);
     order["filled"] += Math.abs(parseInt(msg["filled"]));
 

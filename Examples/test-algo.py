@@ -28,5 +28,5 @@ def handle_data(globals, data, orders):
 		print "OrderID = " + str(oID)
 		
 		
-def onOrderConfirm(orderID, price, filled):
+def onOrderConfirm(globals, orderID, price, filled):
 	print "Order confirmed - " + str((orderID, price, filled))

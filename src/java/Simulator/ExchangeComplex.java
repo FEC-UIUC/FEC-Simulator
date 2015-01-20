@@ -94,13 +94,13 @@ public class ExchangeComplex extends Exchange {
         
         LinkedList<HashMap<String, String>> responses = new LinkedList<>();
         
-        if(!securityExists(sym)){
-            responses.add(orderFailureMessage(orderID, username, sym));
-            return responses;
-        }
-        
         Order order = new Order(orderID, username, sym, price, qty, side, order_type);
         
+        if(!securityExists(sym)){
+            responses.add(orderFailureMessage(order, username));
+            return responses;
+        }
+
         orders.put(orderID, order);
         
         if(users.containsKey(username)){
@@ -172,15 +172,18 @@ public class ExchangeComplex extends Exchange {
         orders.remove(orderID);
     }
     
-    private HashMap<String, String> orderFailureMessage(long orderID, String username, String symbol){
+    private HashMap<String, String> orderFailureMessage(Order order, String username){
         HashMap<String, String> result = new HashMap<>();
         result.put("message_type", "order");
-        result.put("orderID", Long.toString(orderID));
+        result.put("orderID", Long.toString(order.getOrderID()));
         result.put("action", "3");
         result.put("filled", "0");
         result.put("remaining", "0");
         result.put("money", "0");
-        result.put("symbol", symbol);
+        result.put("side", Integer.toString(order.getSide()));
+        result.put("order_type", Integer.toString(order.getType()));
+        result.put("price", Long.toString(order.getPrice()));
+        result.put("symbol", order.getSym());
         result.put("username", username);
         return result;
     }
@@ -193,13 +196,20 @@ public class ExchangeComplex extends Exchange {
         result.put("filled", "0");
         result.put("remaining", Long.toString(order.getQty()));
         result.put("money", "0");
+        result.put("side", Integer.toString(order.getSide()));
+        result.put("order_type", Integer.toString(order.getType()));
         result.put("symbol", order.getSym());
+        result.put("price", Long.toString(order.getPrice()));
         result.put("username", order.getUsername());
         return result;
     }
     
     
     private HashMap<String, String> makeTradeConfirmation(String username, long orderID, long filled, long remaining, long money) {
+        int side = (money > 0) ? 1 : 0;
+        Order order = orders.get(orderID);
+        int ordertype = order.getType();
+        long orig_price = order.getPrice();
         HashMap<String, String> result = new HashMap<>();
         result.put("message_type", "order");
         result.put("orderID", Long.toString(orderID));
@@ -207,6 +217,9 @@ public class ExchangeComplex extends Exchange {
         result.put("filled", Long.toString(filled));
         result.put("remaining", Long.toString(remaining));
         result.put("money", Long.toString(money));
+        result.put("side", Integer.toString(side));
+        result.put("price", Long.toString(orig_price));
+        result.put("order_type", Integer.toString(ordertype));
         result.put("symbol", orders.get(orderID).getSym());
         result.put("username", username);
         return result;
