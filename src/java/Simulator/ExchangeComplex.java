@@ -110,12 +110,14 @@ public class ExchangeComplex extends Exchange {
         LinkedList<Trade> trades = orderbooks.get(sym).handleOrder(order);
         
         if(trades.size() > 0){
-            updateUsers(trades);
+            
             int sidemult = (order.getSide() == 0) ? 1 : -1;
 
             for(Trade trade : trades){
                 System.out.println("Adding trade");
                 long trade_money = trade.getFilled() * trade.getPrice();
+                
+                updateUsers(trade);
 
                 responses.add(makeTradeConfirmation(trade.getMakerUsername(), trade.getMakerOrderID(), 
                                                     trade.getFilled(), trade.getMakerRemaining(), -1*sidemult*trade_money));
@@ -123,12 +125,12 @@ public class ExchangeComplex extends Exchange {
                 responses.add(makeTradeConfirmation(trade.getTakerUsername(), trade.getTakerOrderID(), 
                                                     trade.getFilled(), trade.getTakerRemaining(), sidemult*trade_money));
                 
-                //remove order if empty
-                Order makerOrder = orders.get(trade.getMakerOrderID());
-                if(makerOrder.getQty() == 0){
+                //remove maker order if empty
+                if(trade.getMakerRemaining() == 0){
                     removeOrder(trade.getMakerOrderID());
                 }
             }
+            
         } else {
             //no trades, add resting message
             System.out.println("Adding resting order");
@@ -144,29 +146,29 @@ public class ExchangeComplex extends Exchange {
     }
     
     
-    private void updateUsers(LinkedList<Trade> trades){
+    private void updateUsers(Trade trade){
         
-        for(Trade trade : trades){
-            String sym = trade.getSymbol();
-            User maker = users.get(trade.getMakerUsername());
-            User taker = users.get(trade.getTakerUsername());
-            int makerSide = orders.get(trade.getMakerOrderID()).getSide();
-            long qty = trade.getFilled();
-            long price = trade.getPrice();
-            if(makerSide == 0){
-                maker.subtractMoney(qty*price);
-                taker.addMoney(qty*price);
-                maker.addPosition(sym, qty);
-                taker.subtractPosition(sym, qty);
-            }
-            else{
-                maker.addMoney(qty*price);
-                taker.subtractMoney(qty*price);
-                maker.subtractPosition(sym, qty);
-                taker.addPosition(sym, qty);
-            }
+        String sym = trade.getSymbol();
+        User maker = users.get(trade.getMakerUsername());
+        User taker = users.get(trade.getTakerUsername());
+        int makerSide = orders.get(trade.getMakerOrderID()).getSide();
+        long qty = trade.getFilled();
+        long price = trade.getPrice();
+        if(makerSide == 0){
+            maker.subtractMoney(qty*price);
+            taker.addMoney(qty*price);
+            maker.addPosition(sym, qty);
+            taker.subtractPosition(sym, qty);
         }
+        else{
+            maker.addMoney(qty*price);
+            taker.subtractMoney(qty*price);
+            maker.subtractPosition(sym, qty);
+            taker.addPosition(sym, qty);
+        }
+        
     }
+    
     
     private void removeOrder(long orderID){
         orders.remove(orderID);
