@@ -4,7 +4,8 @@ function handleOrder(msg){
     var security = securities[msg["symbol"]];
 
     addMoney(parseInt(msg["money"]));
-
+    
+    //TODO - create order if order doesn't exist
     order = orders[msg["orderID"]];
     order["remaining"] = parseInt(msg["remaining"]);
     order["filled"] += Math.abs(parseInt(msg["filled"]));

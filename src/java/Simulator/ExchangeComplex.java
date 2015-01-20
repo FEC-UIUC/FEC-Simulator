@@ -298,7 +298,6 @@ public class ExchangeComplex extends Exchange {
             for(String sID: user.getSessionIds()){
                 sessionIds_to_name.remove(sID);
                 user.removeSessionId(sID); //TODO - kill algo if an algo session
-                users.remove(username);
             }
         }
         

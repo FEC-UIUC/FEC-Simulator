@@ -64,9 +64,13 @@ public class Server {
 
     
     public void sendToUser(String msg, String sessionID) {
+        System.out.println("Sending to " + sessionID + ": " + msg);
         Session session = sessions.get(sessionID);
+        if(session == null){
+            System.out.println("Session " + sessionID + " is null");
+            return;
+        }
         try {
-            System.out.println("Sending to " + sessionID + ": " + msg);
             session.getBasicRemote().sendText(msg); //TODO - fix this nullptrexception
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -207,6 +211,7 @@ public class Server {
         for (HashMap<String, String> resp : resps) {
             String _username = resp.get("username");
             String respString = MessageFormatter.format(resp);
+            System.out.println("username = " + _username);
             for(String sID : exchange.getSessionIDs(_username)){
                 sendToUser(respString, sID);
             }
@@ -232,6 +237,7 @@ public class Server {
         //kill running algos if user rebooting
         AlgoProcessManager.removeUser(username);
         
+        //TODO - what if user opens second? Currently will kill first websocket
         LinkedList<HashMap<String, String>> resps = exchange.addUser(sessionID, username);
         
         for (HashMap<String, String> resp : resps) {
