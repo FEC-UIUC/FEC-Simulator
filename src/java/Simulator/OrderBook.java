@@ -160,11 +160,37 @@ public class OrderBook{
        }
        
        public void printAskBook(){
-           
+            for(Long price : asks.keySet()){
+               String temp = "";
+               for(Order order : asks.get(price)){
+                          temp += " "+ Long.toString(order.getQty());
+               }
+               System.out.println(Long.toString(price) + " " + temp);
+              
+           }
        }
  
     private TreeMap<Long, LinkedList<Order>> getSideBook(int side){
         return (side == 0) ? bids : asks;
+    }
+    
+    public void simpleMarketMaker(){
+        boolean running = true;
+        while(running){
+            try{
+                Thread.sleep(100);
+            }
+            catch(Exception e){
+                System.out.println("derp");
+            }   
+            
+            //public Order(long orderID, String userID, String sym, long price, long qty, int side, int order_type){
+            insertOrder(new Order((long)12345, "MarketMakerBot", getSym(), bestBid(), (long)1000, 0, 1));
+            insertOrder(new Order((long)12345, "MarketMakerBot", getSym(), bestAsk(), (long)1000, 1, 0 ));
+            printBidBook();
+            System.out.println("\n");
+        }
+       
     }
     
     

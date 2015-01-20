@@ -22,6 +22,7 @@ public class TestOrderBook {
         book.insertOrder(order4);
         book.printBidBook();
         
+
         System.out.println("\n");
         Order marketorder1 = new Order(123, "test", "AAPL", 500, 500, 1, 0); // mkt sell 500 AAPL  
         book.handleOrder(marketorder1);
@@ -30,6 +31,7 @@ public class TestOrderBook {
         Order marketorder2 = new Order(123, "test", "AAPL", 500, 1500, 1, 0); // mkt sell 1500 AAPL 
         book.handleOrder(marketorder2);
         book.printBidBook();
+        book.simpleMarketMaker();
         
     }
     
