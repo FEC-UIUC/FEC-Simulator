@@ -12,11 +12,11 @@ function handleOrder(msg){
         order= {
             "orderID" : msg["orderID"],
             "symbol" : msg["symbol"],
-            "price" : (parseInt(msg["order_type"]) == 0) ? "-" :  parseInt(price),
+            "price" : (parseInt(msg["order_type"]) == 0) ? "-" :  parseInt(msg["price"]),
             "side" : (parseInt(msg["side"]) == 0) ? "BUY" : "SELL",
             "order_type" : (parseInt(msg["order_type"]) == 0) ? "Market" : "Limit",
             "filled" : 0,
-            "remaining" : parseInt(msg["quantity"]),
+            "remaining" : parseInt(msg["remaining"]),
             "status" : "Pending",
             "tablepointer" : null
         };
