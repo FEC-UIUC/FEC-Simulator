@@ -26,35 +26,50 @@ function addMoney(val){
     $("#money-span").html(_money);
 }
 
-//TODO - make the lower table a trade/cancel history, not filled/canceled orders
+
+var MAX_PAST_ORDERS = 100;
+var current_past_orders = 0;
+
 function updateOrdersTable(order){
 
     var order_row = order["tablepointer"]; 
 
     if(order_row == null){
-        order_row = $("#templates").find(".current-orders-row").clone();
+        if(order["status"] == "Filled" || order["status"] == "Canceled"){
+            current_past_orders++;
+            if(current_past_orders > MAX_PAST_ORDERS){
+                var oldest_past_order = $("#past-orders-tbody").last();
+                var orderID = oldest_past_order.find(".orderID").html();
+                delete orders[orderID];
+                oldest_past_order.remove();
+            }
+            order_row = $("#templates").find(".current-orders-row").clone();
+        } else {
+            order_row = $("#templates").find(".past-orders-row").clone();
+        }
         order_row.attr("id", "order-row-" + order["orderID"].toString());
         order["tablepointer"] = order_row;
     }
 
     for(key in order){
       if(key != "status" && key != "tablepointer"){
-        order_row.find("." + key).html(order[key]);   
+        var r = order_row.find("." + key);
+        if(r.length > 0) { 
+            order_row.find("." + key).html(order[key]);   
+        }
       }
     }
 
     order_row.attr("style", orderStatusStyleMap[order["status"]]);
 
     if(order["status"] == "Filled" || order["status"] == "Canceled"){
-        $("#past-orders-tbody").append(order_row);
-        order_row.find(".cancel-order").remove("button");
-        order_row.remove(".cancel-order");
+        $("#past-orders-tbody").prepend(order_row);
     } else {
         $("#current-orders-tbody").append(order_row);
         var cancel_order_button = order_row.find(".cancel-order").find("button");
         cancel_order_button.unbind("click").click(function(e){ sendCancel(order["orderID"]);});
     }
-
+    
 }
 
 

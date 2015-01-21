@@ -68,6 +68,7 @@ public class Server {
         Session session = sessions.get(sessionID);
         if(session == null){
             System.out.println("Session " + sessionID + " is null");
+            //TODO - remove null sessions from mapping
             return;
         }
         try {

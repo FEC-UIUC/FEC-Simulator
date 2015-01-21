@@ -128,9 +128,14 @@ function handleQuote(msg){
     updateSecurityTable(securities[msg['symbol']]);
 
     if(msg['symbol'] == chart_security){
-        stockchart.series[0].addPoint(bar, true, false);
-        stockchart.series[1].addPoint([t, bid_qty+ask_qty], true, false);
-    }
+		if(stockchart == null){
+			//make chart with initial data. Circumvents problems caused by making a chart without any data
+			makeChart(security['price_series'], security['volume_series']);
+		} else {
+            stockchart.series[0].addPoint(bar, true, false);
+            stockchart.series[1].addPoint([t, bid_qty+ask_qty], true, false);
+		}
+	}
 }
 
 

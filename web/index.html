@@ -75,7 +75,7 @@
             $('#header').load("http://fec.ec.illinois.edu/header.php");
             messages = document.getElementById("messages");
             openSocket();
-            makeChart();
+            //makeChart();
             //$("#securities-table").DataTable();
             //$("#current-orders-table").DataTable();
         });
@@ -215,6 +215,14 @@
                 <td class="cancel-order">
                     <button type="button">Cancel</button>
                 </td>
+            </tr>
+            <tr class="past-orders-row">
+                <td class="orderID"></td>
+                <td class="symbol"></td>
+                <td class="side"></td>
+                <td class="order_type"></td>
+                <td class="price"></td>
+                <td class="filled"></td>
             </tr>
         </tbody>
     </table>
