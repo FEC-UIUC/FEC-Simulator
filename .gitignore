@@ -16,6 +16,7 @@ private.properties
 
 private.xml
 algos/user-algos
+algo-logs/*
 /dist/
 *.properties
 *.xml

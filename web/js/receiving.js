@@ -148,7 +148,25 @@ function handleChatMessage(msg) {
 function handleAlgoUpload(msg) {
     if(msg["success"] == "1"){
         alert("Upload successful.");
+		
     } else {
         alert("Upload failed.");
     }
+}
+
+
+function handleAlgoStatus(msg) {
+
+	var id = msg["id"];
+	algorithm = algorithms[id];
+	
+	if(algorithm == null){
+		return;
+	}
+	algorithm["log"] = "algo-logs/" +  msg["sessionID"] + "/" + parseInt(id) + "_" + algorithm["file"].name.replace(/\.[^/.]+$/, "") + ".log";
+	algorithm["status"] = msg["status"];
+	if("pnl" in msg){
+		algorithm["PnL"] = parseInt(msg["pnl"]);
+	}
+	updateAlgorithmTable(algorithm);
 }

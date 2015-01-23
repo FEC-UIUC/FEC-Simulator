@@ -1,6 +1,7 @@
 var MAX_FEED_LINES = 200;
 var cur_feed_lines = 0;
 
+
 function writeResponse(text){
 	cur_feed_lines++;
 	if(cur_feed_lines > MAX_FEED_LINES){

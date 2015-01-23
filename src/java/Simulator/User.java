@@ -24,6 +24,7 @@ public class User {
     long money; 
     
     private HashMap<String, File> algoFiles = new HashMap<>();
+	private HashMap<Long, String> algoSessionIDs = new HashMap<>();
 
     public User(String sessionID){
         this.sessionIDs = new LinkedList<>();
@@ -35,12 +36,28 @@ public class User {
     }
     
     public boolean removeSessionId(String sessionID){
+		if(this.algoSessionIDs.remove(algoID, sessionID);
+		this.algoSessionIDs.remove(algoID, sessionID);
+        return this.sessionIDs.remove(sessionID);
+    }
+	
+	public boolean addAlgoSessionId(String sessionID, long algoID){
+		this.algoSessionIDs.add(algoID, sessionID);
+        return this.sessionIDs.add(sessionID);
+    }
+    
+    public boolean removeAlgoSessionId(String sessionID, long algoID){
+		this.algoSessionIDs.remove(algoID, sessionID);
         return this.sessionIDs.remove(sessionID);
     }
     
     public LinkedList<String> getSessionIds(){
         return this.sessionIDs;
     }
+	
+	public String getAlgoSessionID(long algoID) {
+		return algoSessionIDs.get(algoID);
+	}
 
     public long getMoney(){
         return money;

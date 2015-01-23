@@ -31,11 +31,17 @@ public abstract class Exchange {
     
     public abstract LinkedList<HashMap<String, String>> addUser(String username, String sessionID);
     
-    public abstract boolean addAlgoToUser(String username, String algoID);
+    public abstract boolean addSessionID(String username, String algoID);
         
-    public abstract boolean removeUser(String sessionID);
+    public abstract boolean removeSessionID(String sessionID);
     
     public abstract boolean removeAlgoFromUser(String username, String algoID);
+	
+	public abstract LinkedList<HashMap<String, String>> addAlgoToUser(String username, String sessionID, long algoID);
+	
+	public abstract boolean removeAlgoFromUser(String username, String sessionID, long algoID);
+	
+	public abstract String getAlgoSessionID(String username, long algoID);
     
     public abstract String getUsername(String sessionID);
     

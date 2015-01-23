@@ -14,10 +14,7 @@ import java.util.Set;
 import java.util.LinkedList;
 import java.util.TreeMap;
 
-/**
- * Issues:
- * -bid_qty and ask_qty is wrong
- */
+
 public class ExchangeComplex extends Exchange {
     
     HashMap<String,BufferedReader> dataFeeds;
@@ -303,17 +300,15 @@ public class ExchangeComplex extends Exchange {
     
     public LinkedList<HashMap<String, String>> addUser(String sessionID, String username){
 
+		LinkedList<HashMap<String, String>> responses = new LinkedList<>();
+		
+		long money = 0L;
         User user = null;
         if(users.containsKey(username)){
             user = users.get(username);
-            
+			money = user.getMoney();
             //TODO - recover user order/portfolio
             
-            //remove old user entry
-            for(String sID: user.getSessionIds()){
-                sessionIds_to_name.remove(sID);
-                user.removeSessionId(sID); //TODO - kill algo if an algo session
-            }
         }
         
         //add new user entry
@@ -323,12 +318,17 @@ public class ExchangeComplex extends Exchange {
         if(user == null){
             users.put(username, new User(sessionID));
         }
+		
+		HashMap<String, String> initial_response = new HashMap<>();
+		initial_response.add("message_type", "new_user");
+		initial_response.add("sessionId", sessionId);
+		initial_response.add("money", Long.toString(money));
+		responses.add(initial_response);
         
-        
-        return new LinkedList<>();
+        return responses;
     }
     
-    public boolean addAlgoToUser(String username, String sessionID){
+    public boolean addSessionID(String username, String sessionID){
         if(sessionIds_to_name.containsKey(sessionID)){
             return false;
         }
@@ -345,23 +345,71 @@ public class ExchangeComplex extends Exchange {
         return true;
     }
     
-    
-    public boolean removeAlgoFromUser(String username, String algoID){
-        if(!sessionIds_to_name.containsKey(algoID)){
+	
+	
+	public boolean removeSessionID(String username, String sessionID){
+        if(!sessionIds_to_name.containsKey(sessionID)){
             return false;
         }
 
-        sessionIds_to_name.remove(algoID);
+        sessionIds_to_name.remove(sessionID);
         
         if(!users.containsKey(username)){
             return false;
         }
         
-        users.get(username).removeSessionId(algoID);
+        users.get(username).removeSessionId(sessionID);
         
         return true;
     }
+       
+
+	public LinkedList<HashMap<String, String>> addAlgoToUser(String username, String sessionID, long algoID) {
+		
+		if(sessionIds_to_name.containsKey(sessionID)){
+            return false;
+        }
         
+        //no need to "add new userid entry", done in "addUser"
+        //sessionIds_to_name.put(sessionID, username);
+        
+        if(!users.containsKey(username)){
+            users.put(username, new User(sessionID));
+        } else {
+            users.get(username).addAlgoSessionId(sessionID);
+        }
+        
+        return addUser(sessionID, username);
+		
+	}
+	
+	public boolean removeAlgoFromUser(String username, String sessionID, long algoID) {
+		
+		if(!sessionIds_to_name.containsKey(sessionID)){
+            return false;
+        }
+
+        sessionIds_to_name.remove(sessionID);
+        
+        if(!users.containsKey(username)){
+            return false;
+        }
+        
+        users.get(username).removeAlgoSessionId(sessionID);
+        
+        return true;
+	
+	}
+	
+	
+	public String getAlgoSessionID(String username, long algoID) {
+		if(users.containsKey(username)){
+            return users.get(username).getAlgoSessionID(algoID);
+        } else {
+            return null;
+        }
+	}
+	
     
     public boolean removeUser(String username){
         LinkedList<String> sessionIDs = getSessionIDs(username);
