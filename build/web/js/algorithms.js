@@ -13,11 +13,10 @@ function addAlgorithm(){
         "id" : next_algorithm_id,
         "name" : algo_name,
         "file" : file,
-        "securities" : [],
         "parameters" : {},
-        "status" : "running",
+        "status" : "stopped",
         "PnL" : 0,
-        "log-file" : "log/user_logs/" + username + "/" + algo_name.replace(" ", "_") + ".log",
+        "log" : null,
         "tablepointer" : null
     };
     algorithms[next_algorithm_id] = new_algorithm;

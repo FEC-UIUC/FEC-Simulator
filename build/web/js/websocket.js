@@ -76,5 +76,8 @@ function messageHandler(event){
     else if (msg['message_type'] == 'algo-upload'){
         handleAlgoUpload(msg);
     }
+	else if (msg['message_type'] == 'algo-status'){
+        handleAlgoStatus(msg);
+    }
 }
 

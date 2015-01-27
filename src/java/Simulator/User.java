@@ -36,18 +36,16 @@ public class User {
     }
     
     public boolean removeSessionId(String sessionID){
-		if(this.algoSessionIDs.remove(algoID, sessionID);
-		this.algoSessionIDs.remove(algoID, sessionID);
         return this.sessionIDs.remove(sessionID);
     }
 	
-	public boolean addAlgoSessionId(String sessionID, long algoID){
-		this.algoSessionIDs.add(algoID, sessionID);
+    public boolean addAlgoSessionId(String sessionID, long algoID){
+	this.algoSessionIDs.put(algoID, sessionID);
         return this.sessionIDs.add(sessionID);
     }
     
     public boolean removeAlgoSessionId(String sessionID, long algoID){
-		this.algoSessionIDs.remove(algoID, sessionID);
+	this.algoSessionIDs.remove(algoID, sessionID);
         return this.sessionIDs.remove(sessionID);
     }
     
@@ -55,9 +53,9 @@ public class User {
         return this.sessionIDs;
     }
 	
-	public String getAlgoSessionID(long algoID) {
-		return algoSessionIDs.get(algoID);
-	}
+    public String getAlgoSessionID(long algoID) {
+            return algoSessionIDs.get(algoID);
+    }
 
     public long getMoney(){
         return money;

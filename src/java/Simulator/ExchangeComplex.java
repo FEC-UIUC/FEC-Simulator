@@ -318,12 +318,11 @@ public class ExchangeComplex extends Exchange {
         if(user == null){
             users.put(username, new User(sessionID));
         }
-		
-		HashMap<String, String> initial_response = new HashMap<>();
-		initial_response.add("message_type", "new_user");
-		initial_response.add("sessionId", sessionId);
-		initial_response.add("money", Long.toString(money));
-		responses.add(initial_response);
+        HashMap<String, String> initial_response = new HashMap<>();
+        initial_response.put("message_type", "new_user");
+        initial_response.put("sessionId", sessionID);
+        initial_response.put("money", Long.toString(money));
+        responses.add(initial_response);
         
         return responses;
     }
@@ -347,7 +346,7 @@ public class ExchangeComplex extends Exchange {
     
 	
 	
-	public boolean removeSessionID(String username, String sessionID){
+    public boolean removeSessionID(String username, String sessionID){
         if(!sessionIds_to_name.containsKey(sessionID)){
             return false;
         }
@@ -364,10 +363,10 @@ public class ExchangeComplex extends Exchange {
     }
        
 
-	public LinkedList<HashMap<String, String>> addAlgoToUser(String username, String sessionID, long algoID) {
+    public LinkedList<HashMap<String, String>> addAlgoToUser(String username, String sessionID, long algoID) {
 		
-		if(sessionIds_to_name.containsKey(sessionID)){
-            return false;
+        if(sessionIds_to_name.containsKey(sessionID)){
+            return null;
         }
         
         //no need to "add new userid entry", done in "addUser"
@@ -376,16 +375,16 @@ public class ExchangeComplex extends Exchange {
         if(!users.containsKey(username)){
             users.put(username, new User(sessionID));
         } else {
-            users.get(username).addAlgoSessionId(sessionID);
+            users.get(username).addAlgoSessionId(sessionID, algoID);
         }
         
         return addUser(sessionID, username);
 		
 	}
 	
-	public boolean removeAlgoFromUser(String username, String sessionID, long algoID) {
+    public boolean removeAlgoFromUser(String username, String sessionID, long algoID) {
 		
-		if(!sessionIds_to_name.containsKey(sessionID)){
+	if(!sessionIds_to_name.containsKey(sessionID)){
             return false;
         }
 
@@ -395,20 +394,20 @@ public class ExchangeComplex extends Exchange {
             return false;
         }
         
-        users.get(username).removeAlgoSessionId(sessionID);
+        users.get(username).removeAlgoSessionId(sessionID, algoID);
         
         return true;
 	
-	}
+    }
 	
 	
-	public String getAlgoSessionID(String username, long algoID) {
-		if(users.containsKey(username)){
+    public String getAlgoSessionID(String username, long algoID) {
+	if(users.containsKey(username)){
             return users.get(username).getAlgoSessionID(algoID);
         } else {
             return null;
         }
-	}
+    }
 	
     
     public boolean removeUser(String username){

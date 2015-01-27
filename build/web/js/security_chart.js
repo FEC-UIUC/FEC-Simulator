@@ -1,7 +1,7 @@
 
 var stockchart;
     
-function makeChart() {	
+function makeChart(start_bars, start_vol) {	
 	Highcharts.setOptions({
         global : {
             useUTC : false
@@ -64,12 +64,12 @@ function makeChart() {
         series : [{
             name : 'OHLC',
             type : 'candlestick',
-            data : [[1,100,100,100,100]],
+            data : start_bars,
             yAxis: 0
         },{
             type: 'column',
             name: 'Volume',
-            data: [],
+            data: start_vol,
             yAxis: 1
         }]
     }).highcharts();

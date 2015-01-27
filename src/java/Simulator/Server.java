@@ -69,7 +69,7 @@ public class Server {
         Session session = sessions.get(sessionID);
         if(session == null){
             System.out.println("Session " + sessionID + " is null");
-			sessions.remove(sessionID);  //remove null sessions from mapping
+            sessions.remove(sessionID);  //remove null sessions from mapping
             return;
         }
         try {
@@ -134,7 +134,7 @@ public class Server {
         else if (msgType.equals("algo-command")) {
             handleAlgoCommand(message_map, session.getId());
         }
-		else if (msgType.equals("algo-status")) {
+	else if (msgType.equals("algo-status")) {
             handleAlgoStatus(message_map, session.getId());
         }
     }
@@ -143,12 +143,12 @@ public class Server {
     @OnClose
     public void onClose(Session session) {
         System.out.println("Session " + session.getId() + " has ended");
-		String username = exchange.getUsername(session.getId());
-		exchange.removeSessionID(username, session.getId());
-		//TODO - currently algo sessionID will remain in algoSessionIDs map in User object if program is closed forcibly, need to remove
+        String username = exchange.getUsername(session.getId());
+        exchange.removeSessionID(username, session.getId());
+        //TODO - currently algo sessionID will remain in algoSessionIDs map in User object if program is closed forcibly, need to remove
         sessions.remove(session.getId());
 		
-		//onClose does not completely wipe user data, accounting for potential of accidental close
+	//onClose does not completely wipe user data, accounting for potential of accidental close
     }
 
     
@@ -354,37 +354,37 @@ public class Server {
             String username = exchange.getUsername(sessionID);
             Long algoID = Long.parseLong(message_map.get("id"));
 			
-			//send stop command to running algo and wait, kill on timeout
-			String algoSessionID = exchange.getAlgoSessionID(username, algoID);
-			HashMap<String, String> response = new HashMap<>();
-			response.add("message_type", "stop");
-			String respString = MessageFormatter.format(response);
-			sendToUser(respString, algoSessionID);
-			
-			//wait for 1 second for safe process shutdown
-			try{
+            //send stop command to running algo and wait, kill on timeout
+            String algoSessionID = exchange.getAlgoSessionID(username, algoID);
+            HashMap<String, String> response = new HashMap<>();
+            response.put("message_type", "stop");
+            String respString = MessageFormatter.format(response);
+            sendToUser(respString, algoSessionID);
+
+            //wait for 1 second for safe process shutdown
+            try{
                 Thread.sleep(1000);
             } catch (InterruptedException ex) {
                 ex.printStackTrace();
             }
 			
-			//remove algo from user object
-			exchange.removeAlgoSessionID(sessionID, algoID);
-			
-			//remove algo from process manager and kill if still active
-			AlgoProcessManager.stopAlgo(username, algoID);
-			
-			//send stopped status update to user
-			response = new HashMap<>();
-			response.add("message_type", "algo-status");
-			response.add("status", "stopped");
-			response.add("id", Long.toString(algoID));
-			
-			String username = exchange.getUsername(sessionID);
-			String respString = MessageFormatter.format(message_map);
-			for(String sID : exchange.getSessionIDs(username)){
-				sendToUser(respString, sID);
-			}
+            //remove algo from user object
+            exchange.removeAlgoFromUser(username, sessionID, algoID);
+
+            //remove algo from process manager and kill if still active
+            AlgoProcessManager.stopAlgo(username, algoID);
+
+            //send stopped status update to user
+            response = new HashMap<>();
+            response.put("message_type", "algo-status");
+            response.put("status", "stopped");
+            response.put("id", Long.toString(algoID));
+
+            username = exchange.getUsername(sessionID);
+            respString = MessageFormatter.format(message_map);
+            for(String sID : exchange.getSessionIDs(username)){
+                sendToUser(respString, sID);
+            }
 				
         }
         else if (command.equals("remove")) {
@@ -398,19 +398,19 @@ public class Server {
 	
 	private void handleAlgoStatus(HashMap<String, String> message_map, String sessionID) {
 		
-		//commented out because stopping an algo sends "stopped" status update, which will hide the error status
-		/*
-		if(message_map.get("status").equals("error")){
-			String algoID = message_map.get("algoID");
-			String username = exchange.getUsername(sessionID);
-			AlgoProcessManager.stopAlgo(username, algoID);
-		}
-		*/
-		
-		//relay algo status message to other clients linked to this algo
-		//TODO - currently relays to all linked websockets, we only want it to go to non-algo websockets
-		String username = exchange.getUsername(sessionID);
-		String respString = MessageFormatter.format(message_map);
+        //commented out because stopping an algo sends "stopped" status update, which will hide the error status
+        /*
+        if(message_map.get("status").equals("error")){
+                String algoID = message_map.get("algoID");
+                String username = exchange.getUsername(sessionID);
+                AlgoProcessManager.stopAlgo(username, algoID);
+        }
+        */
+
+        //relay algo status message to other clients linked to this algo
+        //TODO - currently relays to all linked websockets, we only want it to go to non-algo websockets
+        String username = exchange.getUsername(sessionID);
+        String respString = MessageFormatter.format(message_map);
         for(String sID : exchange.getSessionIDs(username)){
             sendToUser(respString, sID);
         }
@@ -437,10 +437,10 @@ public class Server {
             }
             HashMap<Long, Process> userAlgos = runningAlgos.get(username);
             Process p = userAlgos.get(algoID);
-			if(p != null){
-				p.destroy();
-				userAlgos.remove(algoID);
-			}
+            if(p != null){
+                p.destroy();
+                userAlgos.remove(algoID);
+            }
             return true;
         }
         
