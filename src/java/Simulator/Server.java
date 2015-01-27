@@ -259,7 +259,7 @@ public class Server {
     
     private void handleNewAlgo(HashMap<String, String> message_map, String sessionID, Session session) {
         String username = message_map.get("username");
-		long algoID = Long.parseLong(message_map.get("id"));
+	long algoID = Long.parseLong(message_map.get("id"));
         System.out.println("Adding algo sessionId to " + username);
         LinkedList<HashMap<String, String>> resps = exchange.addAlgoToUser(username, sessionID, algoID);
 
@@ -396,7 +396,7 @@ public class Server {
     }
 	
 	
-	private void handleAlgoStatus(HashMap<String, String> message_map, String sessionID) {
+    private void handleAlgoStatus(HashMap<String, String> message_map, String sessionID) {
 		
         //commented out because stopping an algo sends "stopped" status update, which will hide the error status
         /*
@@ -414,7 +414,7 @@ public class Server {
         for(String sID : exchange.getSessionIDs(username)){
             sendToUser(respString, sID);
         }
-	}
+    }
 	
    
     private static class AlgoProcessManager {
