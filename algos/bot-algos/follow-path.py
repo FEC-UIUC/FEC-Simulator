@@ -28,12 +28,15 @@ def initialize(globals):
   The main proccessing function.  This is called and passed data
 '''
 def handle_data(globals, data, orders):
-	for s in data:
+	for security in data:
 	
 		if not randomBool(parameters['frequency']):
 			continue
 	
-		f = globals['files'][s]
+		if not security in globals['files']:
+			continue
+			
+		f = globals['files'][security]
 		
 		if f.closed:
 			continue
@@ -46,7 +49,7 @@ def handle_data(globals, data, orders):
 			
 		bot_bid_price, bot_ask_price, bot_bid_qty, bot_ask_qty = nextline.split(';')
 		
-		sym_data = data[s]
+		sym_data = data[security]
 		
 		bid_diff = sym_data['bid_price'] - bot_bid_price
 		ask_diff = sym_data['ask_price'] - bot_ask_price
@@ -56,12 +59,12 @@ def handle_data(globals, data, orders):
 		for i in xrange(0, opa):
 			price = bot_bid_price + normal(scale=parameters["variance"])
 			qty = int(parameters["volume"] * bot_bid_qty * sign(bid_diff) * -1) / opa
-			order(s, qty, price, order_type='limit')	
+			order(security, qty, price, order_type='limit')	
 				
 		for i in xrange(0, opa):
 			price = bot_ask_price + normal(scale=parameters["variance"])
 			qty = int(parameters["volume"] * bot_ask_qty * sign(ask_diff) * -1) / opa
-			order(s, qty, price, order_type='limit')	
+			order(security, qty, price, order_type='limit')	
 		
 		
 		
