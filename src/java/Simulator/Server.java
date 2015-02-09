@@ -390,7 +390,7 @@ public class Server {
         else if (command.equals("remove")) {
             String username = exchange.getUsername(sessionID);
             Long algoID = Long.parseLong(message_map.get("id"));
-            AlgoProcessManager.stopAlgo(sessionID, algoID);
+            AlgoProcessManager.stopAlgo(username, algoID);
             //TODO - remove file
         }
     }
