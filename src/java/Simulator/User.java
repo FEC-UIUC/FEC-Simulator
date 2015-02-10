@@ -19,12 +19,13 @@ import java.util.TreeMap;
 public class User {
     
     LinkedList<String> sessionIDs;
+    LinkedList<String> nonAlgoSessionIDs;
     List<Order> orders = new LinkedList<>();
     TreeMap<String, Long> portfolio = new TreeMap<>();
     long money; 
     
     private HashMap<String, File> algoFiles = new HashMap<>();
-	private HashMap<Long, String> algoSessionIDs = new HashMap<>();
+    private HashMap<Long, String> algoSessionIDs = new HashMap<>();
 
     public User(String sessionID){
         this.sessionIDs = new LinkedList<>();
@@ -32,10 +33,12 @@ public class User {
     }
     
     public boolean addSessionId(String sessionID){
+        this.nonAlgoSessionIDs.add(sessionID);
         return this.sessionIDs.add(sessionID);
     }
     
     public boolean removeSessionId(String sessionID){
+        this.nonAlgoSessionIDs.remove(sessionID);
         return this.sessionIDs.remove(sessionID);
     }
 	
@@ -51,6 +54,10 @@ public class User {
     
     public LinkedList<String> getSessionIds(){
         return this.sessionIDs;
+    }
+    
+    public LinkedList<String> getNonAlgoSessionIds(){
+        return this.nonAlgoSessionIDs;
     }
 	
     public String getAlgoSessionID(long algoID) {

@@ -115,7 +115,7 @@ function handleQuote(msg){
     var security = securities[msg['symbol']];
 
     security['symbol'] = msg['symbol'];
-    security['price_series'].push([t, bar]);
+    security['price_series'].push(bar);
     security['volume_series'].push([t,bid_qty+ask_qty]);
     security['value'] = (security['position'] * last_price)/100;
     security['bid_price'] = bid_price/100;
@@ -128,14 +128,14 @@ function handleQuote(msg){
     updateSecurityTable(securities[msg['symbol']]);
 
     if(msg['symbol'] == chart_security){
-		if(stockchart == null){
-			//make chart with initial data. Circumvents problems caused by making a chart without any data
-			makeChart(security['price_series'], security['volume_series']);
-		} else {
+        if(stockchart == null){
+            //make chart with initial data. Circumvents problems caused by making a chart without any data
+            makeChart(security['price_series'], security['volume_series']);
+        } else {
             stockchart.series[0].addPoint(bar, true, false);
             stockchart.series[1].addPoint([t, bid_qty+ask_qty], true, false);
-		}
-	}
+        }
+    }
 }
 
 

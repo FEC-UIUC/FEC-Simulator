@@ -29,16 +29,20 @@ public class Server {
 
     private static DataFeed dataFeed;
     private static final HashMap<String, Session> sessions = new HashMap<String, Session>();
-    private static final Exchange exchange = new ExchangeComplex();
+    private static final ClientManager clientManager = new ClientManager();
+    private static Exchange exchange;
     
     FileOutputStream filestream = null;
     File uploadedFile = null;
     boolean uploadFileSuccess = true;
     
     final static File algoFilesDirectory = new File("C:\\Users\\Greg Pastorek\\Documents\\NetBeansProjects\\Simulator\\algos");
-	final static File logFilesDirectory = new File("C:\\Users\\Greg Pastorek\\Documents\\NetBeansProjects\\Simulator\\web\\algo-logs");
+    final static File logFilesDirectory = new File("C:\\Users\\Greg Pastorek\\Documents\\NetBeansProjects\\Simulator\\web\\algo-logs");
     private static final String PYTHON_EXE = "C:\\Python27\\Python.exe";
 
+    public Server(){
+        exchange = new Exchange(clientManager);
+    }
     
     @OnOpen
     public void onOpen(Session session) {
@@ -143,8 +147,8 @@ public class Server {
     @OnClose
     public void onClose(Session session) {
         System.out.println("Session " + session.getId() + " has ended");
-        String username = exchange.getUsername(session.getId());
-        exchange.removeSessionID(username, session.getId());
+        String username = clientManager.getUsername(session.getId());
+        clientManager.removeSessionID(username, session.getId());
         //TODO - currently algo sessionID will remain in algoSessionIDs map in User object if program is closed forcibly, need to remove
         sessions.remove(session.getId());
 		
@@ -191,9 +195,9 @@ public class Server {
             return;
         }
         
-        AlgoProcessManager.removeUser(exchange.getUsername(sessionID));
+        AlgoProcessManager.removeUser(clientManager.getUsername(sessionID));
         
-        exchange.removeUser(sessionID);
+        clientManager.removeUser(sessionID);
     
         Session session_to_boot = sessions.get(sessionID);
         if (session_to_boot != null) {
@@ -214,15 +218,14 @@ public class Server {
         int side = Integer.parseInt(message_map.get("side"));
         int order_type = Integer.parseInt(message_map.get("order_type"));
         long orderID = Long.parseLong(message_map.get("orderID"));
-        String username = exchange.getUsername(sessionID);
+        String username = clientManager.getUsername(sessionID);
         
         LinkedList<HashMap<String, String>> resps = exchange.placeOrder(orderID, username, symbol, price, qty, side, order_type);
         
         for (HashMap<String, String> resp : resps) {
             String _username = resp.get("username");
             String respString = MessageFormatter.format(resp);
-            System.out.println("username = " + _username);
-            for(String sID : exchange.getSessionIDs(_username)){
+            for(String sID : clientManager.getSessionIDs(_username)){
                 sendToUser(respString, sID);
             }
         }
@@ -231,11 +234,11 @@ public class Server {
     
     private void handleCancel(HashMap<String, String> message_map, String sessionID, Session session) {
         long orderID = Long.parseLong(message_map.get("orderID"));
-        String username = exchange.getUsername(sessionID);
+        String username = clientManager.getUsername(sessionID);
         //System.out.println("username = " + username);
         HashMap<String, String> resp = exchange.cancelOrder(username, orderID);
         String respString = MessageFormatter.format(resp);
-        for(String sID : exchange.getSessionIDs(username)){
+        for(String sID : clientManager.getSessionIDs(username)){
             sendToUser(respString, sID);
         }
     }
@@ -248,7 +251,7 @@ public class Server {
         AlgoProcessManager.removeUser(username);
         
         //TODO - what if user opens second? Currently will kill first websocket
-        LinkedList<HashMap<String, String>> resps = exchange.addUser(sessionID, username);
+        LinkedList<HashMap<String, String>> resps = clientManager.addUser(sessionID, username);
         
         for (HashMap<String, String> resp : resps) {
             String respString = MessageFormatter.format(resp);
@@ -261,7 +264,7 @@ public class Server {
         String username = message_map.get("username");
 	long algoID = Long.parseLong(message_map.get("id"));
         System.out.println("Adding algo sessionId to " + username);
-        LinkedList<HashMap<String, String>> resps = exchange.addAlgoToUser(username, sessionID, algoID);
+        LinkedList<HashMap<String, String>> resps = clientManager.addAlgoToUser(username, sessionID, algoID);
 
         for (HashMap<String, String> resp : resps) {
             String respString = MessageFormatter.format(resp);
@@ -274,7 +277,7 @@ public class Server {
         String username = message_map.get("username");
 		long algoID = Long.parseLong(message_map.get("id"));
 		AlgoProcessManager.stopAlgo(username, algoID);
-        exchange.removeAlgoFromUser(sessionID, username, algoID);
+        clientManager.removeAlgoFromUser(sessionID, username, algoID);
     }
 
     
@@ -335,15 +338,16 @@ public class Server {
         if(command.equals("run")){
             try {
                 String params = message_map.get("parameters");
-                String username = exchange.getUsername(sessionID);
+                String username = clientManager.getUsername(sessionID);
                 String fileName = message_map.get("filename");
-				String logFileName = fileName.replaceFirst("[.][^.]+$", "") + ".log";  //remove file extension and append .log
+		String logFileName = fileName.replaceFirst("[.][^.]+$", "") + ".log";  //remove file extension and append .log
                 Long algoID = Long.parseLong(message_map.get("id"));
                 String filePath = new File(new File(new File(algoFilesDirectory, "user-algos"), sessionID), fileName).getAbsolutePath();
-				File logFile = new File(new File(logFilesDirectory, sessionID), logFileName);
+		File logFile = new File(new File(logFilesDirectory, sessionID), logFileName);
                 logFile.getParentFile().mkdirs();
-				logFile.createNewFile();
-				ProcessBuilder pb = new ProcessBuilder(PYTHON_EXE, filePath, "\"" + params + "\"", username, Long.toString(algoID), ">", logFile.getAbsolutePath());
+                logFile.createNewFile();
+		ProcessBuilder pb = new ProcessBuilder(PYTHON_EXE, filePath, "\"" + params + "\"", username, Long.toString(algoID), ">", logFile.getAbsolutePath());
+                System.out.println(pb.toString());
                 Process p = pb.start();
                 AlgoProcessManager.addAlgo(username, algoID, p);
             } catch (IOException ex) {
@@ -351,11 +355,11 @@ public class Server {
             }
         }
         else if (command.equals("stop")) {
-            String username = exchange.getUsername(sessionID);
+            String username = clientManager.getUsername(sessionID);
             Long algoID = Long.parseLong(message_map.get("id"));
 			
             //send stop command to running algo and wait, kill on timeout
-            String algoSessionID = exchange.getAlgoSessionID(username, algoID);
+            String algoSessionID = clientManager.getAlgoSessionID(username, algoID);
             HashMap<String, String> response = new HashMap<>();
             response.put("message_type", "stop");
             String respString = MessageFormatter.format(response);
@@ -369,7 +373,7 @@ public class Server {
             }
 			
             //remove algo from user object
-            exchange.removeAlgoFromUser(username, sessionID, algoID);
+            clientManager.removeAlgoFromUser(username, sessionID, algoID);
 
             //remove algo from process manager and kill if still active
             AlgoProcessManager.stopAlgo(username, algoID);
@@ -380,15 +384,15 @@ public class Server {
             response.put("status", "stopped");
             response.put("id", Long.toString(algoID));
 
-            username = exchange.getUsername(sessionID);
+            username = clientManager.getUsername(sessionID);
             respString = MessageFormatter.format(message_map);
-            for(String sID : exchange.getSessionIDs(username)){
+            for(String sID : clientManager.getSessionIDs(username)){
                 sendToUser(respString, sID);
             }
 				
         }
         else if (command.equals("remove")) {
-            String username = exchange.getUsername(sessionID);
+            String username = clientManager.getUsername(sessionID);
             Long algoID = Long.parseLong(message_map.get("id"));
             AlgoProcessManager.stopAlgo(username, algoID);
             //TODO - remove file
@@ -409,9 +413,9 @@ public class Server {
 
         //relay algo status message to other clients linked to this algo
         //TODO - currently relays to all linked websockets, we only want it to go to non-algo websockets
-        String username = exchange.getUsername(sessionID);
+        String username = clientManager.getUsername(sessionID);
         String respString = MessageFormatter.format(message_map);
-        for(String sID : exchange.getSessionIDs(username)){
+        for(String sID : clientManager.getNonAlgoSessionIDs(username)){
             sendToUser(respString, sID);
         }
     }
