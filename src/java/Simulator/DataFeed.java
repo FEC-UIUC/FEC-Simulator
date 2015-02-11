@@ -42,11 +42,13 @@ public class DataFeed extends Thread {
     public void run() {
         stop_flag = false;
         double val = 1;
+        int tick = 1;
         
         //send initial quote
         for(String sym : exchange.getSymList()){
             try {
                 HashMap<String, String> quote = exchange.getQuote(sym);
+                quote.put("tick", Integer.toString(tick++));
                 parent.sendToAll(MessageFormatter.format(quote));
             } catch (Exception ex) {
                 Logger.getLogger(DataFeed.class.getName()).log(Level.SEVERE, null, ex);
@@ -63,6 +65,7 @@ public class DataFeed extends Thread {
             for(String sym : exchange.getSymList()){
                 try {
                     HashMap<String, String> quote = exchange.getQuote(sym);
+                    quote.put("tick", Integer.toString(tick++));
                     parent.sendToAll(MessageFormatter.format(quote));
                 } catch (Exception ex) {
                     Logger.getLogger(DataFeed.class.getName()).log(Level.SEVERE, null, ex);

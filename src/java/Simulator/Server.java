@@ -61,7 +61,11 @@ public class Server {
         for (Entry<String, Session> e : sessions.entrySet()) {
             try {
                 e.getValue().getBasicRemote().sendText(msg);
-            } catch (IOException ex) {
+            } 
+            catch (IllegalStateException ex) {
+                sessions.remove(e);
+            } 
+            catch (IOException ex) {
                 ex.printStackTrace();
             }
         }

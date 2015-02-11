@@ -20,3 +20,4 @@ algo-logs/*
 /dist/
 *.properties
 *.xml
+*.log

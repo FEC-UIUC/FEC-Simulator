@@ -101,7 +101,7 @@ function handleQuote(msg){
         };
     } 
 
-    var t = (new Date()).getTime()
+    var t = parseInt(msg['tick'])
     var bid_price = parseInt(msg['bid_price']);
     var ask_price = parseInt(msg['ask_price']);
     var last_price = parseInt(msg['last_price']);

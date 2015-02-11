@@ -130,11 +130,11 @@ function updateAlgorithmTable(algorithm) {
         parameters_button.click(function(e){ editAlgorithmParameters(algorithm);});
 
         var log_button = algorithm_row.find(".log").find("a");
-		if(algorithm["log"] == null){
-			log_button.attr("href", "");
-		} else {
-			log_button.attr("href", algorithm["log"]);
-		}
+        if(algorithm["log"] == null){
+                log_button.attr("href", "");
+        } else {
+                log_button.attr("href", algorithm["log"]);
+        }
 			
         algorithm["tablepointer"] = algorithm_row;
         $("#algorithms-tbody").append(algorithm_row);
