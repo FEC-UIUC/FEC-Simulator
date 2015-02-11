@@ -63,6 +63,23 @@ function updateOrdersTable(order){
     order_row.attr("style", orderStatusStyleMap[order["status"]]);
 
     if(order["status"] == "Filled" || order["status"] == "Canceled"){
+        //TODO - detach or remove (to destroy) current order and make past order
+        /*
+        var cancel_order_button = order_row.find(".cancel-order");
+        if(cancel_order_button){
+            order_row = $("#templates").find(".past-orders-row").clone();
+            order_row.attr("id", "order-row-" + order["orderID"].toString());
+            for(key in order){
+              if(key != "status" && key != "tablepointer"){
+                var r = order_row.find("." + key);
+                if(r.length > 0) { 
+                  order_row.find("." + key).html(order[key]);   
+                }
+              }
+            }
+            order["tablepointer"] = order_row;
+        }
+        */
         $("#past-orders-tbody").prepend(order_row);
     } else {
         $("#current-orders-tbody").append(order_row);
@@ -131,9 +148,9 @@ function updateAlgorithmTable(algorithm) {
 
         var log_button = algorithm_row.find(".log").find("a");
         if(algorithm["log"] == null){
-                log_button.attr("href", "");
+            log_button.attr("href", "");
         } else {
-                log_button.attr("href", algorithm["log"]);
+            log_button.attr("href", algorithm["log"]);
         }
 			
         algorithm["tablepointer"] = algorithm_row;

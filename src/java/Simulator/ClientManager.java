@@ -101,9 +101,6 @@ public class ClientManager {
             return null;
         }
         
-        //no need to "add new userid entry", done in "addUser"
-        //sessionIds_to_name.put(sessionID, username);
-        
         if(!users.containsKey(username)){
             users.put(username, new User(sessionID));
         }
@@ -159,7 +156,7 @@ public class ClientManager {
         }
         else{
             System.out.println(username + " does not exist");
-            return null;
+            return new LinkedList<String>();
         }
     }
     
@@ -206,7 +203,7 @@ public class ClientManager {
         }
         else{
             System.out.println(username + " does not exist");
-            return null;
+            return new LinkedList<Order>();
         }
     }
     

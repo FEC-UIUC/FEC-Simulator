@@ -32,7 +32,7 @@ public class User {
         this.sessionIDs.add(sessionID);
     }
     
-    public boolean addSessionId(String sessionID){
+    public boolean addNonAlgoSessionId(String sessionID){
         this.nonAlgoSessionIDs.add(sessionID);
         return this.sessionIDs.add(sessionID);
     }

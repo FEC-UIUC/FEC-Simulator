@@ -421,7 +421,6 @@ public class Server {
         */
 
         //relay algo status message to other clients linked to this algo
-        //TODO - fixed nullptrexception, break at next line
         String username = clientManager.getUsername(sessionID);
         String respString = MessageFormatter.format(message_map);
         for(String sID : clientManager.getNonAlgoSessionIDs(username)){
