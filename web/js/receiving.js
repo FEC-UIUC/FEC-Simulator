@@ -157,7 +157,7 @@ function handleAlgoUpload(msg) {
 
 function handleAlgoStatus(msg) {
 
-	var id = msg["id"];
+	var id = msg["algoID"];
 	algorithm = algorithms[id];
 	
 	if(algorithm == null){

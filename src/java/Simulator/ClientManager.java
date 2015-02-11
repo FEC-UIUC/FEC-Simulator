@@ -53,26 +53,25 @@ public class ClientManager {
         
         HashMap<String, String> initial_response = new HashMap<>();
         initial_response.put("message_type", "new_user");
-        initial_response.put("sessionId", sessionID);
+        initial_response.put("sessionID", sessionID);
         initial_response.put("money", Long.toString(money));
         responses.add(initial_response);
         
         return responses;
     }
     
-    public boolean addSessionID(String username, String sessionID){
-        if(sessionIds_to_name.containsKey(sessionID)){
+    public boolean addNonAlgoSessionID(String sessionID, String username){
+        if(!users.containsKey(username)){
             return false;
         }
         
-        //add new userid entry
-        sessionIds_to_name.put(sessionID, username);
-        
-        if(!users.containsKey(username)){
-            users.put(username, new User(sessionID));
-        } else {
-            users.get(username).addSessionId(sessionID);
+        if(!sessionIds_to_name.containsKey(sessionID)){
+            sessionIds_to_name.put(sessionID, username);
         }
+        
+
+        users.get(username).addNonAlgoSessionId(sessionID);
+        
         
         return true;
     }
@@ -107,9 +106,9 @@ public class ClientManager {
         
         if(!users.containsKey(username)){
             users.put(username, new User(sessionID));
-        } else {
-            users.get(username).addAlgoSessionId(sessionID, algoID);
         }
+        
+        users.get(username).addAlgoSessionId(sessionID, algoID);  
         
         return addUser(sessionID, username);
 		
@@ -171,7 +170,7 @@ public class ClientManager {
         }
         else{
             System.out.println(username + " does not exist");
-            return null;
+            return new LinkedList<String>();
         }
     }
     

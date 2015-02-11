@@ -90,6 +90,7 @@ public class Server {
     
     public void sendToUser(String msg, Session session) {
         try {
+            System.out.println("Sending to " + session.getId() + ": " + msg);
             session.getBasicRemote().sendText(msg);
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -257,6 +258,9 @@ public class Server {
         //TODO - what if user opens second? Currently will kill first websocket
         LinkedList<HashMap<String, String>> resps = clientManager.addUser(sessionID, username);
         
+        clientManager.addNonAlgoSessionID(sessionID, username);
+        
+        
         for (HashMap<String, String> resp : resps) {
             String respString = MessageFormatter.format(resp);
             sendToUser(respString, session);
@@ -266,7 +270,7 @@ public class Server {
     
     private void handleNewAlgo(HashMap<String, String> message_map, String sessionID, Session session) {
         String username = message_map.get("username");
-	long algoID = Long.parseLong(message_map.get("id"));
+	long algoID = Long.parseLong(message_map.get("algoID"));
         System.out.println("Adding algo sessionId to " + username);
         LinkedList<HashMap<String, String>> resps = clientManager.addAlgoToUser(username, sessionID, algoID);
 
@@ -279,8 +283,8 @@ public class Server {
     
     private void handleRemoveAlgo(HashMap<String, String> message_map, String sessionID, Session session) {
         String username = message_map.get("username");
-		long algoID = Long.parseLong(message_map.get("id"));
-		AlgoProcessManager.stopAlgo(username, algoID);
+	long algoID = Long.parseLong(message_map.get("algoID"));
+	AlgoProcessManager.stopAlgo(username, algoID);
         clientManager.removeAlgoFromUser(sessionID, username, algoID);
     }
 
@@ -342,10 +346,11 @@ public class Server {
         if(command.equals("run")){
             try {
                 String params = message_map.get("parameters");
+                params = params.replace("\"", "\\\"");
                 String username = clientManager.getUsername(sessionID);
                 String fileName = message_map.get("filename");
 		String logFileName = fileName.replaceFirst("[.][^.]+$", "") + ".log";  //remove file extension and append .log
-                Long algoID = Long.parseLong(message_map.get("id"));
+                Long algoID = Long.parseLong(message_map.get("algoID"));
                 String filePath = new File(new File(new File(algoFilesDirectory, "user-algos"), sessionID), fileName).getAbsolutePath();
 		File logFile = new File(new File(logFilesDirectory, sessionID), logFileName);
                 logFile.getParentFile().mkdirs();
@@ -360,7 +365,7 @@ public class Server {
         }
         else if (command.equals("stop")) {
             String username = clientManager.getUsername(sessionID);
-            Long algoID = Long.parseLong(message_map.get("id"));
+            Long algoID = Long.parseLong(message_map.get("algoID"));
 			
             //send stop command to running algo and wait, kill on timeout
             String algoSessionID = clientManager.getAlgoSessionID(username, algoID);
@@ -397,7 +402,7 @@ public class Server {
         }
         else if (command.equals("remove")) {
             String username = clientManager.getUsername(sessionID);
-            Long algoID = Long.parseLong(message_map.get("id"));
+            Long algoID = Long.parseLong(message_map.get("algoID"));
             AlgoProcessManager.stopAlgo(username, algoID);
             //TODO - remove file
         }
@@ -416,7 +421,7 @@ public class Server {
         */
 
         //relay algo status message to other clients linked to this algo
-        //TODO - currently relays to all linked websockets, we only want it to go to non-algo websockets
+        //TODO - fixed nullptrexception, break at next line
         String username = clientManager.getUsername(sessionID);
         String respString = MessageFormatter.format(message_map);
         for(String sID : clientManager.getNonAlgoSessionIDs(username)){
