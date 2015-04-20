@@ -143,7 +143,7 @@ public class Server {
         else if (msgType.equals("algo-command")) {
             handleAlgoCommand(message_map, session.getId());
         }
-	else if (msgType.equals("algo-status")) {
+		else if (msgType.equals("algo-status")) {
             handleAlgoStatus(message_map, session.getId());
         }
     }
@@ -253,13 +253,13 @@ public class Server {
         String username = message_map.get("username");
         
         //kill running algos if user rebooting
+		//TODO - we don't want to do this, need to re-assign anything?
         AlgoProcessManager.removeUser(username);
         
         //TODO - what if user opens second? Currently will kill first websocket
         LinkedList<HashMap<String, String>> resps = clientManager.addUser(sessionID, username);
         
         clientManager.addNonAlgoSessionID(sessionID, username);
-        
         
         for (HashMap<String, String> resp : resps) {
             String respString = MessageFormatter.format(resp);
@@ -351,14 +351,23 @@ public class Server {
                 String fileName = message_map.get("filename");
 		String logFileName = fileName.replaceFirst("[.][^.]+$", "") + ".log";  //remove file extension and append .log
                 Long algoID = Long.parseLong(message_map.get("algoID"));
+                
                 String filePath = new File(new File(new File(algoFilesDirectory, "user-algos"), sessionID), fileName).getAbsolutePath();
 		File logFile = new File(new File(logFilesDirectory, sessionID), logFileName);
                 logFile.getParentFile().mkdirs();
                 logFile.createNewFile();
-		ProcessBuilder pb = new ProcessBuilder(PYTHON_EXE, filePath, "\"" + params + "\"", username, Long.toString(algoID), ">", logFile.getAbsolutePath());
-                System.out.println(pb.toString());
+		
+                ProcessBuilder pb = new ProcessBuilder(PYTHON_EXE, 
+                                                        filePath, "\"" + params + "\"", 
+                                                        username, Long.toString(algoID));
+                pb.redirectOutput(logFile);
+                pb.redirectError(logFile);
+                pb.redirectErrorStream(true);
+                
                 Process p = pb.start();
+                
                 AlgoProcessManager.addAlgo(username, algoID, p);
+                
             } catch (IOException ex) {
                 Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -374,15 +383,15 @@ public class Server {
             String respString = MessageFormatter.format(response);
             sendToUser(respString, algoSessionID);
 
-            //wait for 1 second for safe process shutdown
+            //wait for 3 second for safe process shutdown
             try{
-                Thread.sleep(1000);
+                Thread.sleep(3000);
             } catch (InterruptedException ex) {
                 ex.printStackTrace();
             }
-			
+            
             //remove algo from user object
-            clientManager.removeAlgoFromUser(username, sessionID, algoID);
+            clientManager.removeAlgoFromUser(username, algoSessionID, algoID);
 
             //remove algo from process manager and kill if still active
             AlgoProcessManager.stopAlgo(username, algoID);
@@ -393,7 +402,6 @@ public class Server {
             response.put("status", "stopped");
             response.put("id", Long.toString(algoID));
 
-            username = clientManager.getUsername(sessionID);
             respString = MessageFormatter.format(message_map);
             for(String sID : clientManager.getSessionIDs(username)){
                 sendToUser(respString, sID);
@@ -421,6 +429,7 @@ public class Server {
         */
 
         //relay algo status message to other clients linked to this algo
+        
         String username = clientManager.getUsername(sessionID);
         String respString = MessageFormatter.format(message_map);
         for(String sID : clientManager.getNonAlgoSessionIDs(username)){

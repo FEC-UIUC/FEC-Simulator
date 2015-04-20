@@ -92,7 +92,7 @@ function removeAlgorithm(algorithm){
         "algoID" : algorithm["id"]
     }
     send(msg);
-    removeAlgorithmFromTable(algorithm);
+    removeFromAlgorithmTable(algorithm);
     delete algorithms[algorithm["id"]];
 }
 

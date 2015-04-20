@@ -18,11 +18,11 @@ import java.util.TreeMap;
  */
 public class User {
     
-    LinkedList<String> sessionIDs;
-    LinkedList<String> nonAlgoSessionIDs;
+    LinkedList<String> sessionIDs = new LinkedList<String>();
+    LinkedList<String> nonAlgoSessionIDs = new LinkedList<String>();
     List<Order> orders = new LinkedList<>();
     TreeMap<String, Long> portfolio = new TreeMap<>();
-    long money; 
+    long money = 0; 
     
     private HashMap<String, File> algoFiles = new HashMap<>();
     private HashMap<Long, String> algoSessionIDs = new HashMap<>();
